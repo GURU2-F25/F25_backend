@@ -7,7 +7,7 @@ from typing import Optional
 users (collection)
  └── hello123 (document)
      ├── password: $2b$12$....
-     └── profileImage: Base64
+     └── profileImage: Base64 or null
 '''
 class UserCreate(BaseModel):
     id: str
