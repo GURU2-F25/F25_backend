@@ -1,19 +1,61 @@
+import os
+import base64
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas import UserCreate, RequestId
 from datetime import timedelta
 from app import crud, auth
+from datetime import datetime
+from dotenv import load_dotenv
 
 router = APIRouter()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-@router.post("/api/join")
+@router.post("/user/join")
 def join(user: UserCreate):
+    SAVE_DIR = os.environ["PROFILE_IMAGES_DIR_PATH"]
+    os.makedirs(SAVE_DIR, exist_ok=True)
+    
+    if not user.profileImage or user.profileImage=="":
+        pass
+    elif "," in user.profileImage:
+        header, base64_data = user.profileImage.split(",", 1)
+    else:
+        base64_data = user.profileImage
+    try:
+        # 확장자 추출 (기본값: png)
+        ext = "png"
+        if "image/jpeg" in user.profileImage:
+            ext = "jpg"
+        elif "image/webp" in user.profileImage:
+            ext = "webp"
+
+        # 디코딩
+        image_data = base64.b64decode(base64_data)
+
+        # 저장 경로 생성
+        filename = f"{user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+        filepath = os.path.join(SAVE_DIR, filename)
+        filepath = filepath.replace("\\", "/")
+        user.profileImage = filepath
+
+        # 파일 저장
+        with open(filepath, "wb") as f:
+            f.write(image_data)
+            
+    except Exception as e:
+        print("에러 발생:", e)
+        user.profileImage = ""
+        
+    
+        
     created = crud.create_user(user.id, user.password, user.userName, user.profileImage)
     if not created:
         raise HTTPException(status_code=400, detail="이미 존재하는 사용자 ID입니다.")
     return {"message": "회원가입 성공"}
 
-@router.post("/api/login")
+@router.post("/user/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user_data = crud.get_user(form_data.username)
     if not user_data:
@@ -33,7 +75,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "userName": user_data["userName"],
         "profileImage": user_data["profileImage"]
     }
-@router.post("/api/check-id")
+@router.post("/user/check-id")
 def check_id(req: RequestId):
     id_check = crud.get_user(req.id)
     if not id_check:

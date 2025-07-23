@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import routes
+from app.routers import (user)
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(routes.router)
+app.include_router(user.router)
 
 @app.on_event("shutdown")
 async def on_shutdown():
