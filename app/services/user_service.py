@@ -55,10 +55,11 @@ def create_user(user: UserCreate):
         raise ValueError("이미 존재하는 사용자 ID입니다.")
 
     user.profileImage = save_profile_image(user)
+    hashed_pw = pwd_context.hash(user.password)
 
     user_ref.set({
         "id": user.id,
-        "password": user.password,  # 실서비스라면 해시 필수!
+        "password": hashed_pw, 
         "userName": user.userName,
         "profileImage": user.profileImage
     })
