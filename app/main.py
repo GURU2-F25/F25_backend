@@ -1,11 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
-from app import routes, database
-
-# .env 파일에서 환경 변수 로드
-load_dotenv()
+from app import routes
 
 # FastAPI 앱 생성
 app = FastAPI(

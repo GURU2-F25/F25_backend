@@ -14,3 +14,6 @@ class UserCreate(BaseModel):
     password: str
     userName: str
     profileImage: str
+
+class RequestId(BaseModel):
+    id: str

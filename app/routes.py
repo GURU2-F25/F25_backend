@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from app.schemas import UserCreate
+from app.schemas import UserCreate, RequestId
 from datetime import timedelta
 from app import crud, auth
 
 router = APIRouter()
 
 @router.post("/api/join")
-def register(user: UserCreate):
+def join(user: UserCreate):
     created = crud.create_user(user.id, user.password, user.userName, user.profileImage)
     if not created:
         raise HTTPException(status_code=400, detail="이미 존재하는 사용자 ID입니다.")
@@ -33,3 +33,12 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "userName": user_data["userName"],
         "profileImage": user_data["profileImage"]
     }
+@router.post("/api/check-id")
+def check_id(req: RequestId):
+    id_check = crud.get_user(req.id)
+    if not id_check:
+        return {
+            "message":"사용 가능한 아이디입니다."
+        }
+    if id_check:
+        raise HTTPException(status_code = 422, detail = "이미 존재하는 아이디입니다.")
