@@ -4,11 +4,16 @@ from app.schemas.user import UserCreate
 from app.schemas.todo import CategoryCreate, TodoCreate
 
 def create_category(user: str, category: CategoryCreate):
-    user_ref = db.collection("users").document(user)
-    user_ref.collection("categories").document(category.id).set({
-        "name": category.name,
-        "color": category.color
-    })
+    try:
+        user_ref = db.collection("users").document(user)
+        user_ref.collection("categories").document(category.id).set({
+            "name": category.name,
+            "color": category.color
+        })
+        return True
+    except Exception as e:
+        print(e)
+        return False
     
 def create_todo(user: str, todo: TodoCreate):
     user_ref = db.collection("users").document(user)

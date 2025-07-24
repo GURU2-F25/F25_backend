@@ -1,32 +1,30 @@
-from fastapi import APIRouter, Header, HTTPException, Depends
-from typing import Optional
-import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from fastapi import APIRouter, Header, HTTPException, Depends,  Query
+import uuid
+from app.core import  auth
 from app.schemas.todo import CategoryCreate, TodoCreate
 from datetime import timedelta
-from app.services import user_service
+from app.services import todo_service
 
 
 router = APIRouter()
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Authorization header missing or invalid")
-
-    token = authorization.split(" ")[1]
-    try:
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token["uid"]
-        return user_id
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
 @router.get("/api/create-category")
-def create_category(category: str, user_id: str = Depends(get_current_user)):
-    if not category:
+def create_category(category_name: str = Query(..., alias="name"), 
+                    category_color: str = Query(..., alias="color"), 
+                    user_id: str = Depends(auth.get_current_user)):
+    if not (category_name&category_color):
         raise HTTPException(status_code=400, detail="Missing category name")
 
-    # category_ref = db.collection("users").document(user_id).collection("categories").document(category)
-    # category_ref.set({"name": category})
+    category_id = str(uuid.uuid4())
+     # Pydantic 객체 생성
+    category = CategoryCreate(
+        id=category_id,
+        name=category_name,
+        color=category_color
+    )
+    result = todo_service.create_category(user_id, category)
 
-    # return {"message": f"Category '{category}' created successfully"}
+    if result:
+        return {"message": f"Category '{category_name}'를 정상적으로 생성했습니다."}
+    else :
+        return {"message": f"Category '{category_name}' 생성에 실패했습니다."}

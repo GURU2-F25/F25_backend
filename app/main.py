@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
-from app.api import (user)
+from app.api import (user, todo)
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -21,10 +22,38 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(user.router)
+app.include_router(todo.router)
 
 @app.on_event("shutdown")
 async def on_shutdown():
     print("Shutting down...")
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title="Your App Name",
+        version="1.0.0",
+        description="API 문서",
+        routes=app.routes,
+    )
+
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+    for path in openapi_schema["paths"].values():
+        for method in path.values():
+            method.setdefault("security", [{"BearerAuth": []}])
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # uvicorn으로 직접 실행
 if __name__ == "__main__":
