@@ -37,3 +37,13 @@ def delete_category(user: str, category: str):
         return True
     else:
         return False
+    
+def delete_todo(user: str, todo: str):
+    user_ref = db.collection("users").document(user)
+    todo_ref = user_ref.collection("todos").document(todo)
+    doc = todo_ref.get()
+    if doc.exists:
+        todo_ref.delete()
+        return True
+    else:
+        return False

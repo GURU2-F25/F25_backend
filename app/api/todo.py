@@ -26,6 +26,20 @@ def create_category(category_name: str = Query(..., alias="name"),
     else :
         return {"message": f"Category '{category_name}' 생성에 실패했습니다."}
     
+    
+
+@router.get("/api/delete_category")
+def delete_category(category_id: str = Query(..., alias="category_id"), 
+                    user_id: str = Depends(auth.get_current_user)):
+    
+     # Pydantic 객체 생성
+    result = todo_service.delete_category(user_id, category_id)
+
+    if result:
+        return {"message": f"Category를 정상적으로 삭제했습니다."}
+    else :
+        return {"message": f"Category 삭제에 실패했습니다."}
+    
 
 @router.get("/api/create-todo")
 def create_todo(name: str = Query(..., alias="name"), 
@@ -51,3 +65,15 @@ def create_todo(name: str = Query(..., alias="name"),
         return {"message": f"Todo '{name}'를 정상적으로 생성했습니다."}
     else :
         return {"message": f"Todo '{name}' 생성에 실패했습니다."}
+    
+@router.get("/api/delete_todo")
+def delete_todo(todo_id: str = Query(..., alias="todo_id"), 
+                user_id: str = Depends(auth.get_current_user)):
+    
+     # Pydantic 객체 생성
+    result = todo_service.delete_todo(user_id, todo_id)
+
+    if result:
+        return {"message": f"Todo를 정상적으로 삭제했습니다."}
+    else :
+        return {"message": f"Todo 삭제에 실패했습니다."}
