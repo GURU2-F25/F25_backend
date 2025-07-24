@@ -12,9 +12,7 @@ router = APIRouter()
 def create_category(category_name: str = Query(..., alias="name"), 
                     category_color: str = Query(..., alias="color"), 
                     user_id: str = Depends(auth.get_current_user)):
-    if not (category_name&category_color):
-        raise HTTPException(status_code=400, detail="Missing category name")
-
+    
     category_id = str(uuid.uuid4())
      # Pydantic 객체 생성
     category = CategoryCreate(

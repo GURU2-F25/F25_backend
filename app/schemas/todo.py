@@ -3,12 +3,12 @@ from typing import Optional
 from datetime import date
 from typing import Literal
 
-class CategoryCreate:
+class CategoryCreate(BaseModel):
     id: str
     name: str
     color: str
     
-class TodoCreate:
+class TodoCreate(BaseModel):
     id: str
     name: str
     category: str

@@ -22,12 +22,12 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 def get_current_user(request: Request) -> str:
     auth_header = request.headers.get("authorization")
-    print("authorization:", request.headers)
 
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization header missing or invalid")
 
     token = auth_header.split(" ")[1]
+    print(token)
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
