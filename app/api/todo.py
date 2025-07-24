@@ -96,3 +96,27 @@ def delete_todo(todo_id: str = Query(..., alias="todo_id"),
         return {"message": f"Todo를 정상적으로 삭제했습니다."}
     else :
         return {"message": f"Todo 삭제에 실패했습니다."}
+    
+@router.get("/api/update-todo")
+def update_todo(todo_id: str = Query(..., alias="todo_id"),
+                name: str = Query(..., alias="name"), 
+                category_id: str = Query(..., alias="category_id"), 
+                duedate: str = Query(..., alias="duedate"), 
+                repeat: str = Query(..., alias="repeat"), 
+                user_id: str = Depends(auth.get_current_user)):
+    
+     # Pydantic 객체 생성
+    todo = TodoCreate(
+        id=todo_id,
+        name=name,
+        category_id=category_id,
+        duedate=datetime.strptime(duedate, "%Y-%m-%d").date().isoformat(),
+        repeat=repeat
+    )
+    
+    result = todo_service.update_todo(user_id, todo)
+
+    if result:
+        return {"message": f"Todo '{name}'를 정상적으로 업데이트했습니다."}
+    else :
+        return {"message": f"Todo '{name}' 업데이트에 실패했습니다."}
