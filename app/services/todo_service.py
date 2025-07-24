@@ -1,6 +1,5 @@
 from datetime import datetime
 from app.database import db
-from app.schemas.user import UserCreate
 from app.schemas.todo import CategoryCreate, TodoCreate
 
 def create_category(user: str, category: CategoryCreate):
@@ -16,13 +15,18 @@ def create_category(user: str, category: CategoryCreate):
         return False
     
 def create_todo(user: str, todo: TodoCreate):
-    user_ref = db.collection("users").document(user)
-    user_ref.collection("todos").document(todo.id).set({
-        "name": todo.name,
-        "category": todo.category,
-        "duedate": todo.date,
-        "repeat": todo.repeat
-    })
+    try:
+        user_ref = db.collection("users").document(user)
+        user_ref.collection("todos").document(todo.id).set({
+            "name": todo.name,
+            "category_id": todo.category_id,
+            "duedate": todo.duedate,
+            "repeat": todo.repeat
+        })
+        return True
+    except Exception as e:
+        print(e)
+        return False
     
 def delete_category(user: str, category: str):
     user_ref = db.collection("users").document(user)

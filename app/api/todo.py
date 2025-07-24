@@ -2,9 +2,8 @@ from fastapi import APIRouter, Header, HTTPException, Depends,  Query
 import uuid
 from app.core import  auth
 from app.schemas.todo import CategoryCreate, TodoCreate
-from datetime import timedelta
 from app.services import todo_service
-
+from datetime import datetime
 
 router = APIRouter()
 
@@ -26,3 +25,29 @@ def create_category(category_name: str = Query(..., alias="name"),
         return {"message": f"Category '{category_name}'를 정상적으로 생성했습니다."}
     else :
         return {"message": f"Category '{category_name}' 생성에 실패했습니다."}
+    
+
+@router.get("/api/create-todo")
+def create_todo(name: str = Query(..., alias="name"), 
+                category_id: str = Query(..., alias="category_id"), 
+                duedate: str = Query(..., alias="duedate"), 
+                repeat: str = Query(..., alias="repeat"), 
+                user_id: str = Depends(auth.get_current_user)):
+    
+    todo_id = str(uuid.uuid4())
+    print(datetime.strptime(duedate, "%Y-%m-%d").date().isoformat())
+     # Pydantic 객체 생성
+    todo = TodoCreate(
+        id=todo_id,
+        name=name,
+        category_id=category_id,
+        duedate=datetime.strptime(duedate, "%Y-%m-%d").date().isoformat(),
+        repeat=repeat
+    )
+    
+    result = todo_service.create_todo(user_id, todo)
+
+    if result:
+        return {"message": f"Todo '{name}'를 정상적으로 생성했습니다."}
+    else :
+        return {"message": f"Todo '{name}' 생성에 실패했습니다."}

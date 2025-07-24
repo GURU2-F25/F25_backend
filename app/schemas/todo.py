@@ -11,6 +11,6 @@ class CategoryCreate(BaseModel):
 class TodoCreate(BaseModel):
     id: str
     name: str
-    category: str
-    duedate: date 
+    category_id: str
+    duedate: str 
     repeat: Optional[Literal["none", "daily", "weekly"]] = "none"
