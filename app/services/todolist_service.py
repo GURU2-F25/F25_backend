@@ -18,3 +18,13 @@ def create_todo(user: str, todo: TodoCreate):
         "duedate": todo.date,
         "repeat": todo.repeat
     })
+    
+def delete_category(user: str, category: str):
+    user_ref = db.collection("users").document(user)
+    category_ref = user_ref.collection("categories").document(category)
+    doc = category_ref.get()
+    if doc.exists:
+        category_ref.delete()
+        return True
+    else:
+        return False
