@@ -40,7 +40,26 @@ def delete_category(category_id: str = Query(..., alias="category_id"),
     else :
         return {"message": f"Category 삭제에 실패했습니다."}
     
+@router.get("/api/update-category")
+def update_category(category_id: str = Query(..., alias="category_id"),
+                    category_name: str = Query(..., alias="name"), 
+                    category_color: str = Query(..., alias="color"), 
+                    user_id: str = Depends(auth.get_current_user)):
+    
+     # Pydantic 객체 생성
+    category = CategoryCreate(
+        id=category_id,
+        name=category_name,
+        color=category_color
+    )
+    
+    result = todo_service.update_category(user_id, category)
 
+    if result:
+        return {"message": f"Category '{category_name}'를 정상적으로 업데이트했습니다."}
+    else :
+        return {"message": f"Category '{category_name}' 업데이트에 실패했습니다."}
+    
 @router.get("/api/create-todo")
 def create_todo(name: str = Query(..., alias="name"), 
                 category_id: str = Query(..., alias="category_id"), 

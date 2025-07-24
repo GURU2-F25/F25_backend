@@ -47,3 +47,39 @@ def delete_todo(user: str, todo: str):
         return True
     else:
         return False
+
+def update_category(user: str, category: CategoryCreate):
+    try:
+        user_ref = db.collection("users").document(user)
+        category_ref = user_ref.collection("categories").document(category.id)
+        doc = category_ref.get()
+        if doc.exists:
+            category_ref.update({
+                "name": category.name,
+                "color": category.color
+            })
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
+
+def update_todo(user: str, todo: TodoCreate):
+    try:
+        user_ref = db.collection("users").document(user)
+        todo_ref = user_ref.collection("todos").document(todo.id)
+        doc = todo_ref.get()
+        if doc.exists:
+            todo_ref.update({
+                "name": todo.name,
+                "category_id": todo.category_id,
+                "duedate": todo.duedate,
+                "repeat": todo.repeat
+            })
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
