@@ -28,9 +28,10 @@ class FriendRequestInfo(BaseModel):
     from_profileImage: Optional[str] = None
 
 class FriendRequest(BaseModel):
-    from_id: str
     to_id: str
 
+class ReceivedFriendRequest(BaseModel):
+    from_id: str
 class FriendInfo(BaseModel):
     id: str
     userName: str

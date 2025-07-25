@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core import auth
-from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest, FriendRequestInfo
+from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest
 from datetime import timedelta
 from app.services import user_service
 
@@ -87,7 +87,7 @@ def send_FriendRequest(req: FriendRequest, user_id: str = Depends(auth.get_curre
     return {"message": f"{req.to_id}에게 친구 요청을 보냈습니다."}
 
 @router.post("/user/accept-friend")
-def accept_friend_request(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
+def accept_friend_request(req: ReceivedFriendRequest, user_id: str = Depends(auth.get_current_user)):
     result = user_service.respond_friendRequest(req.from_id, user_id, accept=True)
 
     if result == "not_found":
@@ -100,7 +100,7 @@ def get_friendRequests(user_id: str = Depends(auth.get_current_user)):
     return requests
 
 @router.post("/user/reject-friend")
-def reject_friend_request(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
+def reject_friend_request(req: ReceivedFriendRequest, user_id: str = Depends(auth.get_current_user)):
     result = user_service.respond_friendRequest(req.from_id, user_id, accept=False)
 
     if result == "not_found":
