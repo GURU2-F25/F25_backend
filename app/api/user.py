@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core import auth
-from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest
+from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest, FriendRequestInfo
 from datetime import timedelta
 from app.services import user_service
 
@@ -71,7 +71,7 @@ def get_friendlist(user_id: str = Depends(auth.get_current_user)):
     
     return friends
 
-@router.post("/user/send-FriendRequest")
+@router.post("/user/send-friendrequest")
 def send_FriendRequest(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
     result = user_service.send_FriendRequest(user_id, req.to_id)
 
@@ -86,3 +86,15 @@ def send_FriendRequest(req: FriendRequest, user_id: str = Depends(auth.get_curre
     
     return {"message": f"{req.to_id}에게 친구 요청을 보냈습니다."}
 
+@router.post("/user/accept-friend")
+def accept_friend_request(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
+    result = user_service.respond_friendRequest(req.from_id, user_id, accept=True)
+
+    if result == "not_found":
+        raise HTTPException(detail="친구 요청이 존재하지 않습니다.")
+    return {"message": "친구 요청을 수락했습니다."}
+
+@router.get("/user/get-friendrequests", response_model=list[FriendRequestInfo])
+def get_friendRequests(user_id: str = Depends(auth.get_current_user)):
+    requests = user_service.get_friendRequests(user_id)
+    return requests

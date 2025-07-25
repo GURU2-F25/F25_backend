@@ -22,10 +22,13 @@ class RequestId(BaseModel):
 class FriendRequestInfo(BaseModel):
     from_id: str
     to_id: str
-    status: Literal["spending", "accepted", "rejected"]
+    status: Literal["pending", "accepted", "rejected"]
     timestamp: datetime
+    from_userName: Optional[str] = None
+    from_profileImage: Optional[str] = None
 
 class FriendRequest(BaseModel):
+    from_id: str
     to_id: str
 
 class FriendInfo(BaseModel):
