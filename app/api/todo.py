@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header, HTTPException, Depends,  Query
+from fastapi import APIRouter, Depends,  Query
 import uuid
 from app.core import  auth
 from app.schemas.todo import CategoryCreate, TodoCreate
