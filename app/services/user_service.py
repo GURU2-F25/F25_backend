@@ -133,6 +133,8 @@ def respond_friendRequest(from_id: str, to_id: str, accept: bool) -> str:
                 "friend_id": from_id,
                 "timestamp": datetime.utcnow()
             })
+    else:
+        request_ref.delete()
 
     return status
 

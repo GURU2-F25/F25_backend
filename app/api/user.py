@@ -98,3 +98,11 @@ def accept_friend_request(req: FriendRequest, user_id: str = Depends(auth.get_cu
 def get_friendRequests(user_id: str = Depends(auth.get_current_user)):
     requests = user_service.get_friendRequests(user_id)
     return requests
+
+@router.post("/user/reject-friend")
+def reject_friend_request(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
+    result = user_service.respond_friendRequest(req.from_id, user_id, accept=False)
+
+    if result == "not_found":
+        raise HTTPException(detail="친구 요청이 존재하지 않습니다.")
+    return {"message": "친구 요청을 거절했습니다."}
