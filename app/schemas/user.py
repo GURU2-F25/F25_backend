@@ -19,6 +19,9 @@ class UserCreate(BaseModel):
 class RequestId(BaseModel):
     id: str
 
+class QuitRequest(BaseModel):
+    password: str
+
 class FriendRequestInfo(BaseModel):
     from_id: str
     to_id: str

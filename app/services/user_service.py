@@ -67,6 +67,29 @@ def create_user(user: UserCreate):
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+def delete_user(user_id: str)->bool:
+    try:
+        db.collection("users").document(user_id).delete()
+        friends = db.collection("friends").where("user_id", "==", user_id).stream()
+        for doc in friends:
+            doc.reference.delete()
+
+        friends = db.collection("friends").where("friend_id", "==", user_id).stream()
+        for doc in friends:
+            doc.reference.delete()
+        requests = db.collection("friend_requests").where("from_id", "==", user_id).stream()
+        for doc in requests:
+            doc.reference.delete()
+
+        requests = db.collection("friend_requests").where("to_id", "==", user_id).stream()
+        for doc in requests:
+            doc.reference.delete()
+
+        return True
+    except Exception as e:
+        print(f"[ERROR] 유저 삭제 실패: {e}")
+        return False
+
 def send_FriendRequest(from_id: str, to_id: str) -> str:
     if from_id == to_id:
         return "self_request"

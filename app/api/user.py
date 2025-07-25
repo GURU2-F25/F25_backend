@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core import auth
-from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest
+from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest, QuitRequest
 from datetime import timedelta
 from app.services import user_service
 
@@ -50,8 +50,25 @@ def check_id(req: RequestId):
         }
     if id_check:
         raise HTTPException(status_code = 422, detail = "이미 존재하는 아이디입니다.")
+    
+@router.post("/api/user/quit")
+def quit(req: QuitRequest, user_id: str = Depends(auth.get_current_user)):
+    user_data = user_service.get_user(user_id)
+    
+    if not user_data:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
-@router.get("/user/find-id")
+    if not user_service.verify_password(req.password, user_data["password"]):
+        raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
+
+    result = user_service.delete_user(user_id)
+    if not result:
+        raise HTTPException(status_code=500, detail="회원 탈퇴에 실패했습니다.")
+
+    return {"message": "회원 탈퇴가 완료되었습니다."}
+
+
+@router.get("/api/user/find-id")
 def id_find(id: str, user_id: str = Depends(auth.get_current_user)):
     user_data = user_service.get_user(id)
     if not user_data:
@@ -62,7 +79,7 @@ def id_find(id: str, user_id: str = Depends(auth.get_current_user)):
         "profileImage": user_data.get("profileImage", None)
     }
 
-@router.get("/users/get-friendlist", response_model=list[FriendInfo])
+@router.get("/api/user/get-friendlist", response_model=list[FriendInfo])
 def get_friendlist(user_id: str = Depends(auth.get_current_user)):
     friends = user_service.get_friendlist(user_id)
 
@@ -71,7 +88,7 @@ def get_friendlist(user_id: str = Depends(auth.get_current_user)):
     
     return friends
 
-@router.post("/user/send-friendrequest")
+@router.post("/api/user/send-friendrequest")
 def send_FriendRequest(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
     result = user_service.send_FriendRequest(user_id, req.to_id)
 
@@ -86,7 +103,7 @@ def send_FriendRequest(req: FriendRequest, user_id: str = Depends(auth.get_curre
     
     return {"message": f"{req.to_id}에게 친구 요청을 보냈습니다."}
 
-@router.post("/user/accept-friend")
+@router.post("/api/user/accept-friend")
 def accept_friend_request(req: ReceivedFriendRequest, user_id: str = Depends(auth.get_current_user)):
     result = user_service.respond_friendRequest(req.from_id, user_id, accept=True)
 
@@ -94,12 +111,12 @@ def accept_friend_request(req: ReceivedFriendRequest, user_id: str = Depends(aut
         raise HTTPException(detail="친구 요청이 존재하지 않습니다.")
     return {"message": "친구 요청을 수락했습니다."}
 
-@router.get("/user/get-friendrequests", response_model=list[FriendRequestInfo])
+@router.get("/api/user/get-friendrequests", response_model=list[FriendRequestInfo])
 def get_friendRequests(user_id: str = Depends(auth.get_current_user)):
     requests = user_service.get_friendRequests(user_id)
     return requests
 
-@router.post("/user/reject-friend")
+@router.post("/api/user/reject-friend")
 def reject_friend_request(req: ReceivedFriendRequest, user_id: str = Depends(auth.get_current_user)):
     result = user_service.respond_friendRequest(req.from_id, user_id, accept=False)
 
