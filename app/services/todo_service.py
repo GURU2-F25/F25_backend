@@ -19,11 +19,15 @@ def get_user_categories(user: str):
         print(e)
         return []
     
-def get_user_todos_by_date(user: str):
+def get_user_todos_by_date(user: str, date: str):
     try:
         user_ref = db.collection("users").document(user)
-        # duedate 기준 오름차순 정렬
-        todo_docs = user_ref.collection("todos").order_by("duedate").stream()
+        # duedate가 date와 같은 투두만 조회
+        todo_docs = user_ref.collection("todos")\
+            .where("duedate", "==", date)\
+            .order_by("duedate")\
+            .stream()
+        
         todos = []
         for doc in todo_docs:
             data = doc.to_dict()

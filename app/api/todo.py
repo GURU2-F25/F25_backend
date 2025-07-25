@@ -7,6 +7,31 @@ from datetime import datetime
 
 router = APIRouter()
 
+@router.get("/api/todos/me")
+def get_my_todos(date: str = Query(..., alias="date"),
+                 user_id: str = Depends(auth.get_current_user)):
+    
+    categories = todo_service.get_user_categories(user_id)
+    todos = todo_service.get_user_todos_by_date(user_id, date)
+    
+    return {
+        "categories": categories,
+        "todos":todos
+    }
+
+@router.get("/api/todos/shared")
+def get_ones_todos(date: str = Query(..., alias="date"),
+                    ones_id: str = Query(..., alias="user_id"),
+                    user_id: str = Depends(auth.get_current_user)):
+    
+    categories = todo_service.get_user_categories(ones_id)
+    todos = todo_service.get_user_todos_by_date(ones_id, date)
+    
+    return {
+        "categories": categories,
+        "todos":todos
+    }
+    
 @router.get("/api/create-category")
 def create_category(category_name: str = Query(..., alias="name"), 
                     category_color: str = Query(..., alias="color"), 
@@ -39,6 +64,7 @@ def delete_category(category_id: str = Query(..., alias="category_id"),
         return {"message": f"Category를 정상적으로 삭제했습니다."}
     else :
         return {"message": f"Category 삭제에 실패했습니다."}
+    
     
 @router.get("/api/update-category")
 def update_category(category_id: str = Query(..., alias="category_id"),
