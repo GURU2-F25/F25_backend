@@ -10,7 +10,7 @@ from app.services import user_service
 router = APIRouter()
 
 
-@router.post("/user/join")
+@router.post("/api/user/join")
 def join(user: UserCreate):
     try:
         result = user_service.create_user(user)
@@ -18,7 +18,7 @@ def join(user: UserCreate):
     except Exception as e:
         raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
 
-@router.post("/user/login")
+@router.post("/api/user/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user_data = user_service.get_user(form_data.username)
 
@@ -41,7 +41,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "profileImage": user_data["profileImage"]
     }
     
-@router.post("/user/check-id")
+@router.post("/api/user/check-id")
 def check_id(req: RequestId):
     id_check = user_service.get_user(req.id)
     if not id_check:
