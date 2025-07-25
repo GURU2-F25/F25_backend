@@ -67,3 +67,47 @@ def create_user(user: UserCreate):
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+def send_FriendRequest(from_id: str, to_id: str) -> str:
+    if from_id == to_id:
+        return "self_request"
+    
+    to_user = db.collection("users").document(to_id).get()
+    if not to_user.exists:
+        return "not_found"
+    
+    friend_doc = db.collection("friends").document(f"{from_id}_{to_id}").get()
+    if friend_doc.exists:
+        return "already_friend"
+
+    req_doc = db.collection("friend_requests").document(f"{from_id}_{to_id}").get()
+    if req_doc.exists:
+        return "already_requested"
+
+    db.collection("friend_requests").document(f"{from_id}_{to_id}").set({
+        "from_id": from_id,
+        "to_id": to_id,
+        "status": "spending",
+        "timestamp": datetime()
+    })
+
+    return "success"
+def get_friendlist(user_id: str) -> list[dict]:
+    try:
+        friends = db.collection("friends").where("user_id", "==", user_id).stream()
+        result = []
+
+        for doc in friends:
+            data = doc.to_dict()
+            friend_id = data["friend_id"]
+            user_doc = db.collection("users").document(friend_id).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                result.append({
+                    "id": friend_id,
+                    "userName": user_data.get("userName", ""),
+                    "profileImage": user_data.get("profileImage")
+                })
+        return result
+    except Exception as e:
+        print(f"[ERROR] 친구 목록 조회 실패: {e}")
+        return []
