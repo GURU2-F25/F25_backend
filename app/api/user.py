@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core import auth
-from app.schemas.user import UserCreate, RequestId
+from app.schemas.user import UserCreate, RequestId, FriendInfo, FriendRequest
 from datetime import timedelta
 from app.services import user_service
 
@@ -50,3 +50,39 @@ def check_id(req: RequestId):
         }
     if id_check:
         raise HTTPException(status_code = 422, detail = "이미 존재하는 아이디입니다.")
+
+@router.get("/user/find-id")
+def id_find(id: str, user_id: str = Depends(auth.get_current_user)):
+    user_data = user_service.get_user(id)
+    if not user_data:
+        raise HTTPException(detail = "존재하지 않는 사용자입니다.")
+    return{
+        "id" : id,
+        "username": user_data.get("userName", ""),
+        "profileImage": user_data.get("profileImage", None)
+    }
+
+@router.get("/users/get-friendlist", response_model=list[FriendInfo])
+def get_friendlist(user_id: str = Depends(auth.get_current_user)):
+    friends = user_service.get_friendlist(user_id)
+
+    if not friends:
+        return []  
+    
+    return friends
+
+@router.post("/user/send-FriendRequest")
+def send_FriendRequest(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
+    result = user_service.send_FriendRequest(user_id, req.to_id)
+
+    if result == "self_request":
+        raise HTTPException(detail="자기 자신에게는 친구 요청을 보낼 수 없습니다.")
+    elif result == "not_found":
+        raise HTTPException(detail="존재하지 않는 사용자입니다.")
+    elif result == "already_friend":
+        raise HTTPException(detail="이미 친구입니다.")
+    elif result == "already_requested":
+        raise HTTPException(detail="이미 친구 요청을 보냈습니다.")
+    
+    return {"message": f"{req.to_id}에게 친구 요청을 보냈습니다."}
+
