@@ -36,7 +36,8 @@ def get_user_todos_by_date(user: str, date: str):
                 "name": data.get("name"),
                 "category_id": data.get("category_id"),
                 "duedate": data.get("duedate"),
-                "repeat": data.get("repeat")
+                "repeat": data.get("repeat"),
+                "checked": data.get("checked")
             })
         return todos
     except Exception as e:
@@ -62,7 +63,8 @@ def create_todo(user: str, todo: TodoCreate):
             "name": todo.name,
             "category_id": todo.category_id,
             "duedate": todo.duedate,
-            "repeat": todo.repeat
+            "repeat": todo.repeat,
+            "checked": todo.checked
         })
         return True
     except Exception as e:
@@ -116,11 +118,40 @@ def update_todo(user: str, todo: TodoCreate):
                 "name": todo.name,
                 "category_id": todo.category_id,
                 "duedate": todo.duedate,
-                "repeat": todo.repeat
+                "repeat": todo.repeat,
+                "checked": todo.checked
             })
             return True
         else:
             return False
     except Exception as e:
         print(e)
+        return False
+
+def check_todo(user: str, todo_id: str):
+    try:
+        user_ref = db.collection("users").document(user)
+        todo_ref = user_ref.collection("todos").document(todo_id)
+        doc = todo_ref.get()
+
+        if doc.exists:
+            data = doc.to_dict()
+            current_checked = data.get("checked", "false")  # 기본값 "false"
+            
+            print(f"현재 checked 값: {current_checked}")  # 디버깅용
+            
+            # 만약 checked가 문자열이면
+            if isinstance(current_checked, str):
+                new_checked = "true" if current_checked == "false" else "false"
+            else:
+                # 혹시 boolean일 경우에도 대비
+                new_checked = not current_checked
+
+            todo_ref.update({"checked": new_checked})
+            return True
+        else:
+            print("해당 문서가 존재하지 않습니다.")
+            return False
+    except Exception as e:
+        print(f"에러 발생: {e}")
         return False

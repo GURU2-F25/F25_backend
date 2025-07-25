@@ -14,3 +14,4 @@ class TodoCreate(BaseModel):
     category_id: str
     duedate: str 
     repeat: Optional[Literal["none", "daily", "weekly"]] = "none"
+    checked: Optional[Literal["false", "true"]] = "false"
