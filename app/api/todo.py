@@ -1,160 +1,86 @@
-from fastapi import APIRouter, Depends,  Query
-import uuid
-from app.core import  auth
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Path
+from app.core import auth
 from app.schemas.todo import CategoryCreate, TodoCreate
 from app.services import todo_service
 from datetime import datetime
 
 router = APIRouter()
 
-@router.get("/api/todos/me")
-def get_my_todos(date: str = Query(..., alias="date"),
-                 user_id: str = Depends(auth.get_current_user)):
-    
+# 1. 내 투두 목록 조회
+@router.get("/api/todos")
+def get_my_todos(date: str = Query(...), user_id: str = Depends(auth.get_current_user)):
     categories = todo_service.get_user_categories(user_id)
     todos = todo_service.get_user_todos_by_date(user_id, date)
-    
-    return {
-        "categories": categories,
-        "todos":todos
-    }
+    return {"categories": categories, "todos": todos}
 
+# 2. 다른 사람 투두 조회
 @router.get("/api/todos/shared")
-def get_ones_todos(date: str = Query(..., alias="date"),
-                    ones_id: str = Query(..., alias="user_id"),
-                    user_id: str = Depends(auth.get_current_user)):
-    
-    categories = todo_service.get_user_categories(ones_id)
-    todos = todo_service.get_user_todos_by_date(ones_id, date)
-    
-    return {
-        "categories": categories,
-        "todos":todos
-    }
-    
-@router.get("/api/create-category")
-def create_category(category_name: str = Query(..., alias="name"), 
-                    category_color: str = Query(..., alias="color"), 
-                    user_id: str = Depends(auth.get_current_user)):
-    
-    category_id = str(uuid.uuid4())
-     # Pydantic 객체 생성
-    category = CategoryCreate(
-        id=category_id,
-        name=category_name,
-        color=category_color
-    )
+def get_shared_todos(date: str = Query(...), user_id: str = Depends(auth.get_current_user), shared_user_id: str = Query(..., alias="user_id")):
+    categories = todo_service.get_user_categories(shared_user_id)
+    todos = todo_service.get_user_todos_by_date(shared_user_id, date)
+    return {"categories": categories, "todos": todos}
+
+# ------------------ CATEGORY -------------------
+
+# 3. 카테고리 생성
+@router.post("/api/categories")
+def create_category(category: CategoryCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.create_category(user_id, category)
-
     if result:
-        return {"message": f"Category '{category_name}'를 정상적으로 생성했습니다."}
-    else :
-        return {"message": f"Category '{category_name}' 생성에 실패했습니다."}
-    
-    
+        return {"message": f"Category '{category.name}'를 정상적으로 생성했습니다."}
+    raise HTTPException(status_code=400, detail=f"Category '{category.name}' 생성에 실패했습니다.")
 
-@router.get("/api/delete_category")
-def delete_category(category_id: str = Query(..., alias="category_id"), 
-                    user_id: str = Depends(auth.get_current_user)):
-    
-     # Pydantic 객체 생성
+# 4. 카테고리 수정
+@router.put("/api/categories/{category_id}")
+def update_category(
+    category_id: str,
+    category: CategoryCreate = Body(...),
+    user_id: str = Depends(auth.get_current_user)
+):
+    result = todo_service.update_category(user_id, category)
+    if result:
+        return {"message": f"Category '{category.name}'를 정상적으로 업데이트했습니다."}
+    raise HTTPException(status_code=400, detail=f"Category '{category.name}' 업데이트에 실패했습니다.")
+
+# 5. 카테고리 삭제
+@router.delete("/api/categories/{category_id}")
+def delete_category(category_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.delete_category(user_id, category_id)
-
     if result:
         return {"message": f"Category를 정상적으로 삭제했습니다."}
-    else :
-        return {"message": f"Category 삭제에 실패했습니다."}
-    
-    
-@router.get("/api/update-category")
-def update_category(category_id: str = Query(..., alias="category_id"),
-                    category_name: str = Query(..., alias="name"), 
-                    category_color: str = Query(..., alias="color"), 
-                    user_id: str = Depends(auth.get_current_user)):
-    
-     # Pydantic 객체 생성
-    category = CategoryCreate(
-        id=category_id,
-        name=category_name,
-        color=category_color
-    )
-    
-    result = todo_service.update_category(user_id, category)
+    raise HTTPException(status_code=400, detail="Category 삭제에 실패했습니다.")
 
-    if result:
-        return {"message": f"Category '{category_name}'를 정상적으로 업데이트했습니다."}
-    else :
-        return {"message": f"Category '{category_name}' 업데이트에 실패했습니다."}
-    
-@router.get("/api/create-todo")
-def create_todo(name: str = Query(..., alias="name"), 
-                category_id: str = Query(..., alias="category_id"), 
-                duedate: str = Query(..., alias="duedate"), 
-                repeat: str = Query(..., alias="repeat"), 
-                checked: str = Query(..., alias="checked"),
-                user_id: str = Depends(auth.get_current_user)):
-    
-    todo_id = str(uuid.uuid4())
-    print(datetime.strptime(duedate, "%Y-%m-%d").date().isoformat())
-     # Pydantic 객체 생성
-    todo = TodoCreate(
-        id=todo_id,
-        name=name,
-        category_id=category_id,
-        duedate=datetime.strptime(duedate, "%Y-%m-%d").date().isoformat(),
-        repeat=repeat,
-        checked=checked
-    )
-    
+# ------------------ TODO -------------------
+
+# 6. 투두 생성
+@router.post("/api/todos")
+def create_todo(todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.create_todo(user_id, todo)
-
     if result:
-        return {"message": f"Todo '{name}'를 정상적으로 생성했습니다."}
-    else :
-        return {"message": f"Todo '{name}' 생성에 실패했습니다."}
-    
-@router.get("/api/delete_todo")
-def delete_todo(todo_id: str = Query(..., alias="todo_id"), 
-                user_id: str = Depends(auth.get_current_user)):
-    
-     # Pydantic 객체 생성
-    result = todo_service.delete_todo(user_id, todo_id)
+        return {"message": f"Todo '{todo.name}'를 정상적으로 생성했습니다."}
+    raise HTTPException(status_code=400, detail=f"Todo '{todo.name}' 생성에 실패했습니다.")
 
+# 7. 투두 수정
+@router.put("/api/todos/{todo_id}")
+def update_todo(todo_id: str, todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
+    todo.id = todo_id  # ID는 URL에서 받음
+    result = todo_service.update_todo(user_id, todo)
+    if result:
+        return {"message": f"Todo '{todo.name}'를 정상적으로 업데이트했습니다."}
+    raise HTTPException(status_code=400, detail=f"Todo '{todo.name}' 업데이트에 실패했습니다.")
+
+# 8. 투두 삭제
+@router.delete("/api/todos/{todo_id}")
+def delete_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
+    result = todo_service.delete_todo(user_id, todo_id)
     if result:
         return {"message": f"Todo를 정상적으로 삭제했습니다."}
-    else :
-        return {"message": f"Todo 삭제에 실패했습니다."}
-    
-@router.get("/api/update-todo")
-def update_todo(todo_id: str = Query(..., alias="todo_id"),
-                name: str = Query(..., alias="name"), 
-                category_id: str = Query(..., alias="category_id"), 
-                duedate: str = Query(..., alias="duedate"), 
-                repeat: str = Query(..., alias="repeat"), 
-                checked: str = Query(..., alias="checked"),
-                user_id: str = Depends(auth.get_current_user)):
-    
-     # Pydantic 객체 생성
-    todo = TodoCreate(
-        id=todo_id,
-        name=name,
-        category_id=category_id,
-        duedate=datetime.strptime(duedate, "%Y-%m-%d").date().isoformat(),
-        repeat=repeat,
-        checked=checked
-    )
-    
-    result = todo_service.update_todo(user_id, todo)
+    raise HTTPException(status_code=400, detail="Todo 삭제에 실패했습니다.")
 
-    if result:
-        return {"message": f"Todo '{name}'를 정상적으로 업데이트했습니다."}
-    else :
-        return {"message": f"Todo '{name}' 업데이트에 실패했습니다."}
-    
-@router.get("/api/check-todo")
-def check_todo(todo_id: str = Query(..., alias="todo_id"), user_id: str = Depends(auth.get_current_user)):
+# 9. 투두 체크/해제
+@router.patch("/api/todos/{todo_id}/check")
+def check_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.check_todo(user_id, todo_id)
     if result:
-        return {"message": f"Todo를 정상적으로 업데이트했습니다."}
-    else :
-        return {"message": f"Todo 업데이트에 실패했습니다."}
+        return {"message": "Todo를 정상적으로 업데이트했습니다."}
+    raise HTTPException(status_code=400, detail="Todo 업데이트에 실패했습니다.")
