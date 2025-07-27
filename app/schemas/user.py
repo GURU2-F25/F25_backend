@@ -16,6 +16,10 @@ class UserCreate(BaseModel):
     userName: str
     profileImage: Optional[str] = None
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    deviceToken: Optional[str] = None
 class RequestId(BaseModel):
     id: str
 

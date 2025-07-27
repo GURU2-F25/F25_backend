@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.jobs.reminder import send_due_soon_notifications
 from app.api import (user, todo)
 
 # FastAPI 앱 생성
@@ -27,6 +28,11 @@ app.include_router(todo.router)
 @app.on_event("shutdown")
 async def on_shutdown():
     print("Shutting down...")
+
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(send_due_soon_notifications, "interval", hours=2)
+    scheduler.start()
 
 def custom_openapi():
     if app.openapi_schema:
@@ -57,5 +63,6 @@ app.openapi = custom_openapi
 
 # uvicorn으로 직접 실행
 if __name__ == "__main__":
+    start_scheduler()
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

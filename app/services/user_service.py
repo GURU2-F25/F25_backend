@@ -1,7 +1,7 @@
 import os
 import base64
 from datetime import datetime
-from app.database import db
+from app.core.database import db
 from passlib.context import CryptContext
 from app.schemas.user import UserCreate
 from dotenv import load_dotenv
@@ -66,6 +66,16 @@ def create_user(user: UserCreate):
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+def save_device_token(user_id: str, token: str):
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if user_doc.exists:
+        user_ref.update({"deviceToken": token})
+    else:
+        # 유저가 없다면 새로 생성할 수도 있음 (선택)
+        user_ref.set({"deviceToken": token})
 
 def delete_user(user_id: str)->bool:
     try:
@@ -160,7 +170,6 @@ def respond_friendRequest(from_id: str, to_id: str, accept: bool) -> str:
         request_ref.delete()
 
     return status
-
 
 def get_friendRequests(to_id: str) -> list[dict]:
     try:
