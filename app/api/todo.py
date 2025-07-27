@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,  Query
+from fastapi import APIRouter, HTTPException, Depends,  Query
 import uuid
 from app.core import  auth
 from app.schemas.todo import CategoryCreate, TodoCreate
@@ -49,7 +49,7 @@ def create_category(category_name: str = Query(..., alias="name"),
     if result:
         return {"message": f"Category '{category_name}'를 정상적으로 생성했습니다."}
     else :
-        return {"message": f"Category '{category_name}' 생성에 실패했습니다."}
+        raise HTTPException (status_code=400, detail=f"Category '{category_name}' 생성에 실패했습니다.")
     
     
 
@@ -63,7 +63,7 @@ def delete_category(category_id: str = Query(..., alias="category_id"),
     if result:
         return {"message": f"Category를 정상적으로 삭제했습니다."}
     else :
-        return {"message": f"Category 삭제에 실패했습니다."}
+        raise HTTPException (status_code=400, detail=f"Category 삭제에 실패했습니다.")
     
     
 @router.get("/api/todos/update-category")
@@ -84,7 +84,7 @@ def update_category(category_id: str = Query(..., alias="category_id"),
     if result:
         return {"message": f"Category '{category_name}'를 정상적으로 업데이트했습니다."}
     else :
-        return {"message": f"Category '{category_name}' 업데이트에 실패했습니다."}
+        raise HTTPException (status_code=400, detail= f"Category '{category_name}' 업데이트에 실패했습니다.")
     
 @router.get("/api/todos/create-todo")
 def create_todo(name: str = Query(..., alias="name"), 
@@ -111,7 +111,7 @@ def create_todo(name: str = Query(..., alias="name"),
     if result:
         return {"message": f"Todo '{name}'를 정상적으로 생성했습니다."}
     else :
-        return {"message": f"Todo '{name}' 생성에 실패했습니다."}
+        raise HTTPException (status_code=400, detail=f"Todo '{name}' 생성에 실패했습니다.")
     
 @router.get("/api/todos/delete_todo")
 def delete_todo(todo_id: str = Query(..., alias="todo_id"), 
@@ -123,7 +123,7 @@ def delete_todo(todo_id: str = Query(..., alias="todo_id"),
     if result:
         return {"message": f"Todo를 정상적으로 삭제했습니다."}
     else :
-        return {"message": f"Todo 삭제에 실패했습니다."}
+        raise HTTPException (status_code=400, detail=f"Todo 삭제에 실패했습니다.")
     
 @router.get("/api/todos/update-todo")
 def update_todo(todo_id: str = Query(..., alias="todo_id"),
@@ -149,7 +149,7 @@ def update_todo(todo_id: str = Query(..., alias="todo_id"),
     if result:
         return {"message": f"Todo '{name}'를 정상적으로 업데이트했습니다."}
     else :
-        return {"message": f"Todo '{name}' 업데이트에 실패했습니다."}
+        raise HTTPException (status_code=400, detail=f"Todo '{name}' 업데이트에 실패했습니다.")
     
 @router.get("/api/todos/check-todo")
 def check_todo(todo_id: str = Query(..., alias="todo_id"), user_id: str = Depends(auth.get_current_user)):
@@ -157,4 +157,4 @@ def check_todo(todo_id: str = Query(..., alias="todo_id"), user_id: str = Depend
     if result:
         return {"message": f"Todo를 정상적으로 업데이트했습니다."}
     else :
-        return {"message": f"Todo 업데이트에 실패했습니다."}
+        raise HTTPException (status_code=400, detail=f"Todo 업데이트에 실패했습니다.")
