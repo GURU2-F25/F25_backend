@@ -32,7 +32,7 @@ def get_ones_todos(date: str = Query(..., alias="date"),
         "todos":todos
     }
     
-@router.get("/api/create-category")
+@router.get("/api/todos/create-category")
 def create_category(category_name: str = Query(..., alias="name"), 
                     category_color: str = Query(..., alias="color"), 
                     user_id: str = Depends(auth.get_current_user)):
@@ -53,7 +53,7 @@ def create_category(category_name: str = Query(..., alias="name"),
     
     
 
-@router.get("/api/delete_category")
+@router.get("/api/todos/delete_category")
 def delete_category(category_id: str = Query(..., alias="category_id"), 
                     user_id: str = Depends(auth.get_current_user)):
     
@@ -66,7 +66,7 @@ def delete_category(category_id: str = Query(..., alias="category_id"),
         return {"message": f"Category 삭제에 실패했습니다."}
     
     
-@router.get("/api/update-category")
+@router.get("/api/todos/update-category")
 def update_category(category_id: str = Query(..., alias="category_id"),
                     category_name: str = Query(..., alias="name"), 
                     category_color: str = Query(..., alias="color"), 
@@ -86,7 +86,7 @@ def update_category(category_id: str = Query(..., alias="category_id"),
     else :
         return {"message": f"Category '{category_name}' 업데이트에 실패했습니다."}
     
-@router.get("/api/create-todo")
+@router.get("/api/todos/create-todo")
 def create_todo(name: str = Query(..., alias="name"), 
                 category_id: str = Query(..., alias="category_id"), 
                 duedate: str = Query(..., alias="duedate"), 
@@ -113,7 +113,7 @@ def create_todo(name: str = Query(..., alias="name"),
     else :
         return {"message": f"Todo '{name}' 생성에 실패했습니다."}
     
-@router.get("/api/delete_todo")
+@router.get("/api/todos/delete_todo")
 def delete_todo(todo_id: str = Query(..., alias="todo_id"), 
                 user_id: str = Depends(auth.get_current_user)):
     
@@ -125,7 +125,7 @@ def delete_todo(todo_id: str = Query(..., alias="todo_id"),
     else :
         return {"message": f"Todo 삭제에 실패했습니다."}
     
-@router.get("/api/update-todo")
+@router.get("/api/todos/update-todo")
 def update_todo(todo_id: str = Query(..., alias="todo_id"),
                 name: str = Query(..., alias="name"), 
                 category_id: str = Query(..., alias="category_id"), 
@@ -151,7 +151,7 @@ def update_todo(todo_id: str = Query(..., alias="todo_id"),
     else :
         return {"message": f"Todo '{name}' 업데이트에 실패했습니다."}
     
-@router.get("/api/check-todo")
+@router.get("/api/todos/check-todo")
 def check_todo(todo_id: str = Query(..., alias="todo_id"), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.check_todo(user_id, todo_id)
     if result:
