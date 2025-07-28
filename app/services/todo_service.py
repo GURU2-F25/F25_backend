@@ -187,6 +187,51 @@ def check_todo(user: str, todo_id: str):
         return False
     
 def get_unchecked_todos_due_today(user_id: str):
-    today = datetime.now().date().isoformat()
-    return db.collection("todos").where("user_id", "==", user_id) \
-        .where("duedate", "==", today).where("checked", "==", "false").stream()
+    try:
+        today_str = datetime.now().date().isoformat()
+        target_date = datetime.strptime(today_str, "%Y-%m-%d").date()
+        target_weekday = target_date.weekday()  # 0=월요일, 6=일요일
+
+        user_ref = db.collection("users").document(user_id)
+        todo_docs = user_ref.collection("todos")\
+            .where("duedate", "<=", today_str)\
+            .order_by("duedate")\
+            .stream()
+
+        todos = []
+        for doc in todo_docs:
+            data = doc.to_dict()
+            repeat = data.get("repeat")
+            duedate_str = data.get("duedate")
+            checked = data.get("checked")
+
+            if checked != "false":
+                continue
+            if not duedate_str:
+                continue
+
+            duedate = datetime.strptime(duedate_str, "%Y-%m-%d").date()
+
+            # repeat 조건 필터링
+            if duedate == target_date:
+                pass
+            elif repeat == "daily":
+                pass
+            elif repeat == "weekly" and duedate.weekday() == target_weekday:
+                pass
+            else:
+                continue
+
+            todos.append({
+                "id": doc.id,
+                "name": data.get("name"),
+                "category_id": data.get("category_id"),
+                "duedate": duedate_str,
+                "repeat": repeat,
+                "checked": checked,
+            })
+
+        return todos
+    except Exception as e:
+        print(f"Error in get_unchecked_todos_due_today: {e}")
+        return []

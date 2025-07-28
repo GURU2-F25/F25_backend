@@ -212,3 +212,23 @@ def get_follower_list(user_id: str) -> list[dict]:
     except Exception as e:
         print(f"[ERROR] 팔로워 목록 조회 실패: {e}")
         return []
+
+# 전체 유저 가져오기
+def get_all_users_with_tokens():
+    users_ref = db.collection("users")
+    # deviceToken 필드가 존재하고 빈 문자열이 아닌 문서만 필터링 (Firestore에서 직접 빈 문자열 필터링은 안 될 수 있어서 필드 존재만 체크)
+    query = users_ref.where("deviceToken", "!=", "").stream()
+
+    result = []
+    for doc in query:
+        data = doc.to_dict()
+        token = data.get("deviceToken")
+        if token:  # None 또는 빈 문자열 아닌 경우만 추가
+            result.append({
+                "id": doc.id,
+                "fcm_token": token,
+                "userName": data.get("userName", ""),
+                # 필요한 필드 추가 가능
+            })
+
+    return result
