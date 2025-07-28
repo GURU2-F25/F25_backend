@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from app.core import auth
 from app.schemas.todo import CategoryCreate, TodoCreate
 from app.services import todo_service
+from app.jobs import reminder
 from firebase_admin import messaging
 
 router = APIRouter()
@@ -99,3 +100,9 @@ def send_test_push(token: str = Body(...), title: str = Body(...), body: str = B
         return {"result": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# 11. push - git action으로 주기적 실행
+@router.post("/api/push/reminder")
+def push_reminder():
+    reminder.send_due_soon_notifications()
+    return {"result": "notifications sent"}
