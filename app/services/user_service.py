@@ -111,137 +111,104 @@ def delete_user(user_id: str)->bool:
     try:
         db.collection("users").document(user_id).delete()
         friends = db.collection("friends").where("user_id", "==", user_id).stream()
-        for doc in friends:
+        follows = db.collection("follow").where("follower_id", "==", user_id).stream()
+        for doc in follows:
             doc.reference.delete()
 
-        friends = db.collection("friends").where("friend_id", "==", user_id).stream()
-        for doc in friends:
-            doc.reference.delete()
-        requests = db.collection("friend_requests").where("from_id", "==", user_id).stream()
-        for doc in requests:
-            doc.reference.delete()
-
-        requests = db.collection("friend_requests").where("to_id", "==", user_id).stream()
-        for doc in requests:
-            doc.reference.delete()
+        follows = db.collection("follow").where("followee_id", "==", user_id).stream()
+        for doc in follows:
+            doc.reference.delete()        
 
         return True
     except Exception as e:
         print(f"[ERROR] 유저 삭제 실패: {e}")
         return False
     
-# 친구 요청 보내기
-def send_FriendRequest(from_id: str, to_id: str) -> str:
-    """
-    친구 요청 전송 로직. 중복 요청, 자기 자신 요청, 이미 친구 여부 등을 검사합니다.
-    """
-    if from_id == to_id:
-        return "self_request"
-    
-    to_user = db.collection("users").document(to_id).get()
-    if not to_user.exists:
+# 팔로우 요청
+def follow_user(follower_id: str, followee_id: str) -> str:
+    if follower_id == followee_id:
+        return "self_follow"
+
+    user = db.collection("users").document(followee_id).get()
+    if not user.exists:
         return "not_found"
-    
-    friend_doc = db.collection("friends").document(f"{from_id}_{to_id}").get()
-    if friend_doc.exists:
-        return "already_friend"
 
-    req_doc = db.collection("friend_requests").document(f"{from_id}_{to_id}").get()
-    if req_doc.exists:
-        return "already_requested"
+    follow_ref = db.collection("follow").document(f"{follower_id}_{followee_id}")
+    if follow_ref.get().exists:
+        return "already_following"
 
-    db.collection("friend_requests").document(f"{from_id}_{to_id}").set({
-        "from_id": from_id,
-        "to_id": to_id,
-        "status": "pending",
+    follow_ref.set({
+        "follower_id": follower_id,
+        "followee_id": followee_id,
         "timestamp": datetime.utcnow()
     })
     return "success"
 
+#팔로우 끊기
+def unfollow_user(follower_id: str, followee_id: str) -> str:
+    follow_ref = db.collection("follow").document(f"{follower_id}_{followee_id}")
+    if follow_ref.get().exists:
+        follow_ref.delete()
+        return "unfollowed"
+    return "not_following"
+
 # 친구 목록 조회
 def get_friendlist(user_id: str) -> list[dict]:
-    """
-    사용자 ID 기준으로 친구 목록을 반환합니다.
-    """
     try:
-        friends = db.collection("friends").where("user_id", "==", user_id).stream()
+        following = db.collection("follow").where("follower_id", "==", user_id).stream()
         result = []
-
-        for doc in friends:
-            data = doc.to_dict()
-            friend_id = data["friend_id"]
-            user_doc = db.collection("users").document(friend_id).get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                result.append({
-                    "id": friend_id,
-                    "userName": user_data.get("userName", ""),
-                    "profileImage": user_data.get("profileImage")
-                })
+        for f in following:
+            data = f.to_dict()
+            followee_id = data["followee_id"]
+            # 맞팔 여부 확인
+            if db.collection("follow").document(f"{followee_id}_{user_id}").get().exists:
+                user_doc = db.collection("users").document(followee_id).get()
+                if user_doc.exists:
+                    user_data = user_doc.to_dict()
+                    result.append({
+                        "id": followee_id,
+                        "userName": user_data.get("userName", ""),
+                        "profileImage": user_data.get("profileImage")
+                    })
         return result
     except Exception as e:
         print(f"[ERROR] 친구 목록 조회 실패: {e}")
         return []
     
-# 친구 요청 수락 또는 거절
-def respond_friendRequest(from_id: str, to_id: str, accept: bool) -> str:
-    """
-    친구 요청 수락 또는 거절 처리.
-    수락 시 양방향 친구 관계를 생성합니다.
-    """
-    request_ref = db.collection("friend_requests").document(f"{from_id}_{to_id}")
-    request_doc = request_ref.get()
 
-    if not request_doc.exists:
-        return "not_found"
-
-    status = "accepted" if accept else "rejected"
-    request_ref.update({"status": status})
-
-    if accept:
-            db.collection("friends").document(f"{from_id}_{to_id}").set({
-                "user_id": from_id,
-                "friend_id": to_id,
-                "timestamp": datetime.utcnow()
+# 팔로잉 목록 조회
+def get_following_list(user_id: str) -> list[dict]:
+    follows = db.collection("follow").where("follower_id", "==", user_id).stream()
+    result = []
+    for doc in follows:
+        data = doc.to_dict()
+        followee_doc = db.collection("users").document(data["followee_id"]).get()
+        if followee_doc.exists:
+            u = followee_doc.to_dict()
+            result.append({
+                "id": data["followee_id"],
+                "userName": u.get("userName", ""),
+                "profileImage": u.get("profileImage")
             })
-            db.collection("friends").document(f"{to_id}_{from_id}").set({
-                "user_id": to_id,
-                "friend_id": from_id,
-                "timestamp": datetime.utcnow()
-            })
-    else:
-        # 거절 시 요청 삭제
-        request_ref.delete()
+    return result
 
-    return status
-
-# 받은 친구 요청 목록 조회
-def get_friendRequests(to_id: str) -> list[dict]:
-    """
-    사용자가 받은 친구 요청 목록을 반환합니다.
-    """
+# 팔로워 목록 조회 
+def get_follower_list(user_id: str) -> list[dict]:
     try:
-        requests = db.collection("friend_requests") \
-            .where("to_id", "==", to_id) \
-            .where("status", "==", "pending") \
-            .stream()
-
+        followers = db.collection("follow").where("followee_id", "==", user_id).stream()
         result = []
-        for doc in requests:
-            data = doc.to_dict()
-            from_user_doc = db.collection("users").document(data["from_id"]).get()
-            if from_user_doc.exists:
-                from_user = from_user_doc.to_dict()
+        for f in followers:
+            data = f.to_dict()
+            follower_id = data["follower_id"]
+            user_doc = db.collection("users").document(follower_id).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
                 result.append({
-                    "from_id": data["from_id"],
-                    "to_id": data["to_id"],
-                    "status": data["status"],
-                    "timestamp": data["timestamp"],
-                    "from_userName": from_user.get("userName", ""),
-                    "from_profileImage": from_user.get("profileImage", None)
+                    "id": follower_id,
+                    "userName": user_data.get("userName", ""),
+                    "profileImage": user_data.get("profileImage")
                 })
-
         return result
     except Exception as e:
-        print(f"[ERROR] 친구 요청 목록 조회 실패: {e}")
+        print(f"[ERROR] 팔로워 목록 조회 실패: {e}")
         return []

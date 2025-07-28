@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from app.core import auth
-from app.schemas.user import LoginRequest, UserCreate, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest, QuitRequest
+from app.schemas.user import LoginRequest, UserCreate, FriendInfo, QuitRequest
 from app.services import user_service
 
 router = APIRouter()
@@ -82,37 +82,29 @@ def get_friendlist(user_id: str = Depends(auth.get_current_user)):
 
 # ------------------ ME/FRIENDS-REQUESTS -------------------
 
-# 7. 친구 요청 보내기
-@router.post("/api/me/friend-requests")
-def send_friend_request(req: FriendRequest, user_id: str = Depends(auth.get_current_user)):
-    result = user_service.send_FriendRequest(user_id, req.to_id)
-    if result == "self_request":
-        raise HTTPException(status_code=400, detail="자기 자신에게는 친구 요청을 보낼 수 없습니다.")
+# 7. 팔로우 하기
+@router.post("/api/follow/{target_id}")
+def follow_user(target_id: str, user_id: str = Depends(auth.get_current_user)):
+    result = user_service.follow_user(user_id, target_id)
+    if result == "self_follow":
+        raise HTTPException(status_code=400, detail="자기 자신을 팔로우할 수 없습니다.")
     if result == "not_found":
-        raise HTTPException(status_code=400, detail="존재하지 않는 사용자입니다.")
-    if result == "already_friend":
-        raise HTTPException(status_code=400, detail="이미 친구입니다.")
-    if result == "already_requested":
-        raise HTTPException(status_code=400, detail="이미 친구 요청을 보냈습니다.")
-    return {"message": f"{req.to_id}에게 친구 요청을 보냈습니다."}
+        raise HTTPException(status_code=404, detail="대상 사용자를 찾을 수 없습니다.")
+    if result == "already_following":
+        raise HTTPException(status_code=400, detail="이미 팔로우 중입니다.")
+    return {"message": f"{target_id}님을 팔로우했습니다."}
 
-# 8. 친구 요청 수락
-@router.put("/api/me/friend-requests/{from_id}")
-def accept_friend_request(from_id: str, user_id: str = Depends(auth.get_current_user)):
-    result = user_service.respond_friendRequest(from_id, user_id, accept=True)
-    if result == "not_found":
-        raise HTTPException(status_code=400, detail="친구 요청이 존재하지 않습니다.")
-    return {"message": "친구 요청을 수락했습니다."}
 
-# 9. 친구 요청 거절
-@router.delete("/api/me/friend-requests/{from_id}")
-def reject_friend_request(from_id: str, user_id: str = Depends(auth.get_current_user)):
-    result = user_service.respond_friendRequest(from_id, user_id, accept=False)
-    if result == "not_found":
-        raise HTTPException(status_code=400, detail="친구 요청이 존재하지 않습니다.")
-    return {"message": "친구 요청을 거절했습니다."}
 
-# 10. 받은 친구 요청 목록
-@router.get("/api/me/friend-requests", response_model=list[FriendRequestInfo])
-def get_friend_requests(user_id: str = Depends(auth.get_current_user)):
-    return user_service.get_friendRequests(user_id)
+# 8. 팔로우 끊기
+@router.delete("/api/follow/{target_id}")
+def unfollow_user(target_id: str, user_id: str = Depends(auth.get_current_user)):
+    result = user_service.unfollow_user(user_id, target_id)
+    if result == "not_following":
+        raise HTTPException(status_code=400, detail="팔로우 상태가 아닙니다.")
+    return {"message": f"{target_id}님을 언팔로우했습니다."}
+
+# 9. 팔로워 목록 조회
+@router.get("/api/me/followers", response_model=list[FriendInfo])
+def get_followerlist(user_id: str = Depends(auth.get_current_user)):
+    return user_service.get_follower_list(user_id) or []
