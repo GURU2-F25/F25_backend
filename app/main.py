@@ -25,6 +25,10 @@ app.add_middleware(
 app.include_router(user.router)
 app.include_router(todo.router)
 
+@app.on_event("startup")
+async def startup_event():
+    start_scheduler()
+    
 @app.on_event("shutdown")
 async def on_shutdown():
     print("Shutting down...")
@@ -63,6 +67,5 @@ app.openapi = custom_openapi
 
 # uvicorn으로 직접 실행
 if __name__ == "__main__":
-    start_scheduler()
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
