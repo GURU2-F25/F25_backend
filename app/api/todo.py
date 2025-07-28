@@ -2,8 +2,6 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from app.core import auth
 from app.schemas.todo import CategoryCreate, TodoCreate
 from app.services import todo_service
-from app.jobs import reminder
-from firebase_admin import messaging
 
 router = APIRouter()
 
@@ -85,24 +83,3 @@ def check_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
     if result:
         return {"message": "Todo를 정상적으로 업데이트했습니다."}
     raise HTTPException(status_code=400, detail="Todo 업데이트에 실패했습니다.")
-
-# ------------------ PUSH -------------------
-
-# 10. push
-@router.post("/api/push/test")
-def send_test_push(token: str = Body(...), title: str = Body(...), body: str = Body(...)):
-    try:
-        message = messaging.Message(
-            notification=messaging.Notification(title=title, body=body),
-            token=token,
-        )
-        response = messaging.send(message)
-        return {"result": response}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-# 11. push - git action으로 주기적 실행
-@router.post("/api/push/reminder")
-def push_reminder():
-    reminder.send_due_soon_notifications()
-    return {"result": "notifications sent"}

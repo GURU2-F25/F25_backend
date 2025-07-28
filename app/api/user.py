@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from app.core import auth
 from app.schemas.user import LoginRequest, UserCreate, FriendInfo, QuitRequest
@@ -80,9 +79,18 @@ def get_user_info(id: str, user_id: str = Depends(auth.get_current_user)):
 def get_friendlist(user_id: str = Depends(auth.get_current_user)):
     return user_service.get_friendlist(user_id) or []
 
+# 7. 토큰 수정
+@router.put("/api/me/device-token")
+def login(deviceToken: str, user_id: str = Depends(auth.get_current_user)):
+    # 기기 토큰이 있으면 저장
+    if deviceToken:
+        user_service.save_device_token(user_id, deviceToken)
+
+    return {"message": "저장 완료"}
+
 # ------------------ ME/FRIENDS-REQUESTS -------------------
 
-# 7. 팔로우 하기
+# 8. 팔로우 하기
 @router.post("/api/follow/{target_id}")
 def follow_user(target_id: str, user_id: str = Depends(auth.get_current_user)):
     result = user_service.follow_user(user_id, target_id)
@@ -96,7 +104,7 @@ def follow_user(target_id: str, user_id: str = Depends(auth.get_current_user)):
 
 
 
-# 8. 팔로우 끊기
+# 9. 팔로우 끊기
 @router.delete("/api/follow/{target_id}")
 def unfollow_user(target_id: str, user_id: str = Depends(auth.get_current_user)):
     result = user_service.unfollow_user(user_id, target_id)
@@ -104,7 +112,7 @@ def unfollow_user(target_id: str, user_id: str = Depends(auth.get_current_user))
         raise HTTPException(status_code=400, detail="팔로우 상태가 아닙니다.")
     return {"message": f"{target_id}님을 언팔로우했습니다."}
 
-# 9. 팔로워 목록 조회
+# 10. 팔로워 목록 조회
 @router.get("/api/me/followers", response_model=list[FriendInfo])
 def get_followerlist(user_id: str = Depends(auth.get_current_user)):
     return user_service.get_follower_list(user_id) or []
