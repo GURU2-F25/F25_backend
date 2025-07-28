@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from app.core import auth
-from app.schemas.user import UserCreate, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest, QuitRequest
+from app.schemas.user import LoginRequest, UserCreate, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest, QuitRequest
 from app.services import user_service
 
 router = APIRouter()
@@ -17,20 +17,24 @@ def join(user: UserCreate):
         raise HTTPException(status_code=400, detail="이미 존재하는 아이디입니다.")
 
 # 2. 로그인
-@router.post("/api/users/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user_data = user_service.get_user(form_data.username)
+@router.post("/api/user/login")
+def login(data: LoginRequest):
+    user_data = user_service.get_user(data.username)
 
     if not user_data:
         raise HTTPException(status_code=400, detail="사용자가 존재하지 않습니다.")
 
-    if not user_service.verify_password(form_data.password, user_data["password"]):
+    if not user_service.verify_password(data.password, user_data["password"]):
         raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
 
     access_token = auth.create_access_token(
-        data={"sub": form_data.username},
+        data={"sub": data.username},
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
+
+    # 기기 토큰이 있으면 저장
+    if data.deviceToken:
+        user_service.save_device_token(user_data["id"], data.deviceToken)
 
     return {
         "access_token": access_token,
@@ -38,7 +42,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "userName": user_data["userName"],
         "profileImage": user_data["profileImage"]
     }
-
 # 3. 아이디 중복 확인
 @router.get("/api/users/exists")
 def check_id(id: str):
