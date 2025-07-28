@@ -2,11 +2,10 @@ import os
 from fastapi import Request
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
-from typing import Optional
-from fastapi import Header, HTTPException, Depends,  Query
+from fastapi import HTTPException
 from dotenv import load_dotenv
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 SECRET_KEY = os.getenv("SECRET_KEY")
