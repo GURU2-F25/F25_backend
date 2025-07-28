@@ -21,30 +21,56 @@ def get_user_categories(user: str):
         print(e)
         return []
     
+
 def get_user_todos_by_date(user: str, date: str):
     try:
         user_ref = db.collection("users").document(user)
-        # duedate가 date와 같은 투두만 조회
+        # date 문자열 -> datetime.date 변환 (예: "2025-07-28")
+        target_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        target_weekday = target_date.weekday()  # 월=0, 화=1, ..., 일=6
+
         todo_docs = user_ref.collection("todos")\
-            .where("duedate", "==", date)\
+            .where("duedate", "<=", date)\
             .order_by("duedate")\
             .stream()
-        
+
         todos = []
         for doc in todo_docs:
             data = doc.to_dict()
+            repeat = data.get("repeat")
+            duedate_str = data.get("duedate")
+            if not duedate_str:
+                continue
+
+            # duedate도 date형으로 변환
+            duedate = datetime.datetime.strptime(duedate_str, "%Y-%m-%d").date()
+
+            # 필터링 조건:
+            # 1) duedate == target_date
+            # 2) repeat == "daily"
+            # 3) repeat == "weekly" and 요일 일치
+            if duedate == target_date:
+                pass
+            elif repeat == "daily":
+                pass
+            elif repeat == "weekly" and duedate.weekday() == target_weekday:
+                pass
+            else:
+                continue
+
             todos.append({
                 "id": doc.id,
                 "name": data.get("name"),
                 "category_id": data.get("category_id"),
-                "duedate": data.get("duedate"),
-                "repeat": data.get("repeat"),
+                "duedate": duedate_str,
+                "repeat": repeat,
                 "checked": data.get("checked")
             })
         return todos
     except Exception as e:
         print(e)
         return []
+
     
 def create_category(user: str, category: CategoryCreate):
     try:
