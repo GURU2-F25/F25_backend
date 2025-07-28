@@ -163,4 +163,4 @@ def check_todo(user: str, todo_id: str):
 def get_unchecked_todos_due_today(user_id: str):
     today = datetime.now().date().isoformat()
     return db.collection("todos").where("user_id", "==", user_id) \
-        .where("duedate", "==", today).where("checked", "==", False).stream()
+        .where("duedate", "==", today).where("checked", "==", "false").stream()
