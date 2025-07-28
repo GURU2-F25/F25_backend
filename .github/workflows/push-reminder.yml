@@ -12,8 +12,8 @@ jobs:
       - name: Ping to wake up server
         run: |
           echo "Pinging health check endpoint..."
-          curl --retry 5 --retry-delay 5 --max-time 30 https://your-service-name.onrender.com/api/healthz
+          curl --retry 5 --retry-delay 5 --max-time 30 "${{ secrets.PROD_SERVER_URL }}/api/healthz"
 
       - name: Call push reminder API
         run: |
-          curl -X POST https://your-service-name.onrender.com/api/push/reminder
+          curl -X POST "${{ secrets.PROD_SERVER_URL }}/api/push/reminder"
