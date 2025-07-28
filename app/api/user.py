@@ -18,7 +18,7 @@ def join(user: UserCreate):
 # 2. 로그인
 @router.post("/api/user/login")
 def login(data: LoginRequest):
-    user_data = user_service.get_user(data.username)
+    user_data = user_service.get_user(data.id)
 
     if not user_data:
         raise HTTPException(status_code=400, detail="사용자가 존재하지 않습니다.")
@@ -27,7 +27,7 @@ def login(data: LoginRequest):
         raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
 
     access_token = auth.create_access_token(
-        data={"sub": data.username},
+        data={"sub": data.id},
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
@@ -36,6 +36,8 @@ def login(data: LoginRequest):
         user_service.save_device_token(user_data["id"], data.deviceToken)
 
     return {
+        "id": user_data["id"],
+        "uid": user_data["uid"],
         "access_token": access_token,
         "token_type": "bearer",
         "userName": user_data["userName"],

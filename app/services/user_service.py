@@ -5,6 +5,7 @@ from app.core.database import db
 from passlib.context import CryptContext
 from app.schemas.user import UserCreate
 from dotenv import load_dotenv
+import uuid
 # 비밀번호 해싱 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -50,15 +51,29 @@ def save_profile_image(user: UserCreate) -> str:
         print("이미지 저장 실패:", e)
         return ""
     
-# 사용자 정보 조회
+def generate_uuid_with_timestamp():
+    uid = str(uuid.uuid4())
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    return f"{uid}_{timestamp}"
+
 def get_user(user_id: str):
     """
     user_id를 기반으로 사용자 정보를 조회합니다.
+    uuid 필드가 없을 경우, 자동으로 uuid + timestamp 형식으로 생성합니다.
     """
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
+
     if user_doc.exists:
-        return user_doc.to_dict()
+        user_data = user_doc.to_dict()
+        
+        if "uid" not in user_data:
+            generated_uuid = generate_uuid_with_timestamp()
+            user_ref.update({"uid": generated_uuid})
+            user_data["uid"] = generated_uuid  # 반환값에도 포함되게
+        
+        return user_data
+
     return None
 
 # 사용자 생성 (회원가입)
@@ -73,9 +88,12 @@ def create_user(user: UserCreate):
 
     user.profileImage = save_profile_image(user)
     hashed_pw = pwd_context.hash(user.password)
+    uid = generate_uuid_with_timestamp()
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
     user_ref.set({
         "id": user.id,
+        "uid":uid,
         "password": hashed_pw, 
         "userName": user.userName,
         "profileImage": user.profileImage
