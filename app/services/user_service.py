@@ -9,10 +9,12 @@ from dotenv import load_dotenv
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def save_profile_image(user: UserCreate) -> str:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     load_dotenv(os.path.join(BASE_DIR, ".env"))
-    SAVE_DIR = os.environ["PROFILE_IMAGES_DIR_PATH"]
+    profile_dir = os.environ["PROFILE_IMAGES_DIR_PATH"]
+    SAVE_DIR = os.path.join(BASE_DIR, profile_dir)
     os.makedirs(SAVE_DIR, exist_ok=True)
+
     
     profile_data = user.profileImage
     if not profile_data:

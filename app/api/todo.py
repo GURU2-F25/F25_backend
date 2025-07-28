@@ -90,12 +90,12 @@ def check_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
 # 10. push
 @router.post("/api/push/test")
 def send_test_push(token: str = Body(...), title: str = Body(...), body: str = Body(...)):
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-        ),
-        token=token,
-    )
-    response = messaging.send(message)
-    return {"result": response}
+    try:
+        message = messaging.Message(
+            notification=messaging.Notification(title=title, body=body),
+            token=token,
+        )
+        response = messaging.send(message)
+        return {"result": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

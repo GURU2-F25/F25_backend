@@ -1,6 +1,5 @@
 
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordRequestForm
 from app.core import auth
 from app.schemas.user import UserCreate, LoginRequest, RequestId, FriendInfo, FriendRequest, FriendRequestInfo, ReceivedFriendRequest, QuitRequest
 from datetime import timedelta
