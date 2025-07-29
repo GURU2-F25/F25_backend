@@ -40,7 +40,7 @@ def get_my_friendlist(user_id: str = Depends(auth.get_current_user)):
     return user_service.get_friendlist(user_id) or []
 
 # 팔로잉 목록 조회
-@router.get("/api/me/followings", response_model=list[FriendInfo])
+@router.get("/api/me/following", response_model=list[FriendInfo])
 def get_my_followinglist(user_id: str = Depends(auth.get_current_user)):
     return user_service.get_following_list(user_id) or []
 
@@ -100,7 +100,7 @@ def get_friendlist(id: str, _: str = Depends(auth.get_current_user)):
     return user_service.get_friendlist(id) or []
 
 # 팔로잉 목록 조회
-@router.get("/api/{id}/followings", response_model=list[FriendInfo])
+@router.get("/api/{id}/following", response_model=list[FriendInfo])
 def get_followinglist(id: str, _: str = Depends(auth.get_current_user)):
     return user_service.get_following_list(id) or []
 
