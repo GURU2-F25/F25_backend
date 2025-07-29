@@ -4,8 +4,9 @@ from datetime import datetime
 from app.core.database import db
 from passlib.context import CryptContext
 from app.schemas.user import UserCreate
+from app.utils.common import generate_uuid_with_timestamp
 from dotenv import load_dotenv
-import uuid
+
 # 비밀번호 해싱 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -50,11 +51,6 @@ def save_profile_image(user: UserCreate) -> str:
     except Exception as e:
         print("이미지 저장 실패:", e)
         return ""
-    
-def generate_uuid_with_timestamp():
-    uid = str(uuid.uuid4())
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    return f"{uid}_{timestamp}"
 
 def get_user(user_id: str):
     """
@@ -250,3 +246,30 @@ def get_all_users_with_tokens():
             })
 
     return result
+
+# 유저 검색
+def search_users_by_prefix(prefix: str):
+    try:
+        start = prefix
+        # 'tes' → 'tes\uffff' (문자열 범위 끝)
+        end = prefix + "\uf8ff"
+
+        # Firestore에서 __name__ (document ID)에 대해 범위 쿼리
+        user_query = (
+            db.collection("users")
+            .order_by("__name__")
+            .start_at({"__name__": start})
+            .end_at({"__name__": end})
+            .stream()
+        )
+
+        results = []
+        for doc in user_query:
+            results.append({
+                "id": doc.id,
+                "data": doc.to_dict()  # 필요 없다면 제외 가능
+            })
+        return results
+    except Exception as e:
+        print("Error:", e)
+        return []

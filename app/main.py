@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.jobs.reminder import send_due_soon_notifications
-from app.api import (user, todo, push, healthz)
+from app.api import (auth, user, todo, push, healthz)
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
+app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(todo.router)
 app.include_router(push.router)

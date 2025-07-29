@@ -1,8 +1,7 @@
 from datetime import datetime
 from app.core.database import db
 from app.schemas.todo import CategoryCreate, TodoCreate
-import uuid
-
+from app.utils.common import generate_uuid_with_timestamp
 
 def get_user_categories(user: str):
     try:
@@ -75,7 +74,7 @@ def get_user_todos_by_date(user: str, date: str):
 def create_category(user: str, category: CategoryCreate):
     try:
         user_ref = db.collection("users").document(user)
-        category.id = str(uuid.uuid4())  # ID는 서버에서 생성
+        category.id = generate_uuid_with_timestamp() 
         user_ref.collection("categories").document(category.id).set({
             "name": category.name,
             "color": category.color
@@ -88,7 +87,7 @@ def create_category(user: str, category: CategoryCreate):
 def create_todo(user: str, todo: TodoCreate):
     try:
         user_ref = db.collection("users").document(user)
-        todo.id = str(uuid.uuid4())  # ID는 서버에서 생성
+        todo.id = generate_uuid_with_timestamp()  
         user_ref.collection("todos").document(todo.id).set({
             "name": todo.name,
             "category_id": todo.category_id,

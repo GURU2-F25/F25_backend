@@ -5,14 +5,14 @@ from app.services import todo_service
 
 router = APIRouter()
 
-# 1. 내 투두 목록 조회
+# 내 투두 목록 조회
 @router.get("/api/todos")
 def get_my_todos(date: str = Query(...), user_id: str = Depends(auth.get_current_user)):
     categories = todo_service.get_user_categories(user_id)
     todos = todo_service.get_user_todos_by_date(user_id, date)
     return {"categories": categories, "todos": todos}
 
-# 2. 다른 사람 투두 조회
+# 다른 사람 투두 조회
 @router.get("/api/todos/shared")
 def get_shared_todos(date: str = Query(...), user_id: str = Depends(auth.get_current_user), shared_user_id: str = Query(..., alias="user_id")):
     categories = todo_service.get_user_categories(shared_user_id)
@@ -21,7 +21,7 @@ def get_shared_todos(date: str = Query(...), user_id: str = Depends(auth.get_cur
 
 # ------------------ CATEGORY -------------------
 
-# 3. 카테고리 생성
+# 카테고리 생성
 @router.post("/api/categories")
 def create_category(category: CategoryCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.create_category(user_id, category)
@@ -29,7 +29,7 @@ def create_category(category: CategoryCreate = Body(...), user_id: str = Depends
         return {"message": f"Category '{category.name}'를 정상적으로 생성했습니다."}
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 생성에 실패했습니다.")
 
-# 4. 카테고리 수정
+# 카테고리 수정
 @router.put("/api/categories/{category_id}")
 def update_category(
     category_id: str,
@@ -41,7 +41,7 @@ def update_category(
         return {"message": f"Category '{category.name}'를 정상적으로 업데이트했습니다."}
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 업데이트에 실패했습니다.")
 
-# 5. 카테고리 삭제
+# 카테고리 삭제
 @router.delete("/api/categories/{category_id}")
 def delete_category(category_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.delete_category(user_id, category_id)
@@ -51,7 +51,7 @@ def delete_category(category_id: str, user_id: str = Depends(auth.get_current_us
 
 # ------------------ TODO -------------------
 
-# 6. 투두 생성
+# 투두 생성
 @router.post("/api/todos")
 def create_todo(todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.create_todo(user_id, todo)
@@ -59,7 +59,7 @@ def create_todo(todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_cu
         return {"message": f"Todo '{todo.name}'를 정상적으로 생성했습니다."}
     raise HTTPException(status_code=400, detail=f"Todo '{todo.name}' 생성에 실패했습니다.")
 
-# 7. 투두 수정
+# 투두 수정
 @router.put("/api/todos/{todo_id}")
 def update_todo(todo_id: str, todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     todo.id = todo_id  # ID는 URL에서 받음
@@ -68,7 +68,7 @@ def update_todo(todo_id: str, todo: TodoCreate = Body(...), user_id: str = Depen
         return {"message": f"Todo '{todo.name}'를 정상적으로 업데이트했습니다."}
     raise HTTPException(status_code=400, detail=f"Todo '{todo.name}' 업데이트에 실패했습니다.")
 
-# 8. 투두 삭제
+# 투두 삭제
 @router.delete("/api/todos/{todo_id}")
 def delete_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.delete_todo(user_id, todo_id)
@@ -76,7 +76,7 @@ def delete_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
         return {"message": f"Todo를 정상적으로 삭제했습니다."}
     raise HTTPException(status_code=400, detail="Todo 삭제에 실패했습니다.")
 
-# 9. 투두 체크/해제
+# 투두 체크/해제
 @router.patch("/api/todos/{todo_id}/check")
 def check_todo(todo_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.check_todo(user_id, todo_id)

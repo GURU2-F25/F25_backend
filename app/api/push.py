@@ -4,7 +4,7 @@ from firebase_admin import messaging
 
 router = APIRouter()
 
-# 1. push
+# push
 @router.post("/api/push/test")
 def send_test_push(token: str = Body(...), title: str = Body(...), body: str = Body(...)):
     try:
@@ -17,7 +17,7 @@ def send_test_push(token: str = Body(...), title: str = Body(...), body: str = B
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-# 2. push - git action으로 주기적 실행
+# push - git action으로 주기적 실행
 @router.post("/api/push/reminder")
 def push_reminder():
     reminder.send_due_soon_notifications()
