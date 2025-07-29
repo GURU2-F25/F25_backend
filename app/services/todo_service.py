@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.core.database import db
-from app.schemas.todo import CategoryCreate, TodoCreate
+from app.schemas.todo import CategoryCreate, CategoryUpdate, TodoCreate, TodoUpdate
 from app.utils.common import generate_uuid_with_timestamp
 
 def get_user_categories(user: str):
@@ -25,7 +25,7 @@ def get_user_todos_by_date(user: str, date: str):
     try:
         user_ref = db.collection("users").document(user)
         # date 문자열 -> datetime.date 변환 (예: "2025-07-28")
-        target_date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        target_date = datetime.strptime(date, "%Y-%m-%d").date()
         target_weekday = target_date.weekday()  # 월=0, 화=1, ..., 일=6
 
         todo_docs = user_ref.collection("todos")\
@@ -42,7 +42,7 @@ def get_user_todos_by_date(user: str, date: str):
                 continue
 
             # duedate도 date형으로 변환
-            duedate = datetime.datetime.strptime(duedate_str, "%Y-%m-%d").date()
+            duedate = datetime.strptime(duedate_str, "%Y-%m-%d").date()
 
             # 필터링 조건:
             # 1) duedate == target_date
@@ -120,10 +120,10 @@ def delete_todo(user: str, todo: str):
     else:
         return False
 
-def update_category(user: str, category: CategoryCreate):
+def update_category(user: str, category_id: str, category: CategoryUpdate):
     try:
         user_ref = db.collection("users").document(user)
-        category_ref = user_ref.collection("categories").document(category.id)
+        category_ref = user_ref.collection("categories").document(category_id)
         doc = category_ref.get()
         if doc.exists:
             category_ref.update({
@@ -137,10 +137,10 @@ def update_category(user: str, category: CategoryCreate):
         print(e)
         return False
 
-def update_todo(user: str, todo: TodoCreate):
+def update_todo(user: str, todo_id: str, todo: TodoUpdate):
     try:
         user_ref = db.collection("users").document(user)
-        todo_ref = user_ref.collection("todos").document(todo.id)
+        todo_ref = user_ref.collection("todos").document(todo_id)
         doc = todo_ref.get()
         if doc.exists:
             todo_ref.update({

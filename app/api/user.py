@@ -1,20 +1,23 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from app.core import auth
 from app.services import user_service
-from app.schemas.user import FriendInfo, QuitRequest, UserSearchResult
+from app.schemas.user import User, FriendInfo, QuitRequest, UserSearchResult
 
 router = APIRouter()
 
 # 사용자 정보 조회
-@router.get("/api/users/{id}")
-def get_user_info(id: str, _: str = Depends(auth.get_current_user)):
+@router.get("/api/users/{id}", response_model=User)
+def get_user_profile(id: str, _: str = Depends(auth.get_current_user)):
     user_data = user_service.get_user(id)
     if not user_data:
         raise HTTPException(status_code=400, detail="존재하지 않는 사용자입니다.")
     return {
         "id": id,
-        "username": user_data.get("userName", ""),
-        "profileImage": user_data.get("profileImage", None)
+        "uid": user_data.get("uid", None),
+        "userName": user_data.get("userName", ""),
+        "profileImage": user_data.get("profileImage", None),
+        "followers": user_data.get("followers"),
+        "following": user_data.get("following")
     }
 
 # 아이디 중복 확인
@@ -34,10 +37,18 @@ def search_users(prefix: str = Query(..., min_length=1), _: str = Depends(auth.g
 
 # ------------------ ME -------------------
 
-# 친구(맞팔) 목록 조회
-@router.get("/api/me/friends", response_model=list[FriendInfo])
-def get_my_friendlist(user_id: str = Depends(auth.get_current_user)):
-    return user_service.get_friendlist(user_id) or []
+# 내 정보 조회
+@router.get("/api/me", response_model=User)
+def get_my_profile(user_id: str = Depends(auth.get_current_user)):
+    user_data = user_service.get_user(user_id)
+    return {
+        "id": user_id,
+        "uid": user_data.get("uid", ""),
+        "userName": user_data.get("userName", ""),
+        "profileImage": user_data.get("profileImage", None),
+        "followers": user_data.get("followers"),
+        "following": user_data.get("following")
+    }
 
 # 팔로잉 목록 조회
 @router.get("/api/me/following", response_model=list[FriendInfo])
@@ -93,11 +104,6 @@ def unfollow_user(target_id: str, user_id: str = Depends(auth.get_current_user))
     return {"message": f"{target_id}님을 언팔로우했습니다."}
 
 # ------------------ {id}/ -------------------
-
-# 친구(맞팔) 목록 조회
-@router.get("/api/{id}/friends", response_model=list[FriendInfo])
-def get_friendlist(id: str, _: str = Depends(auth.get_current_user)):
-    return user_service.get_friendlist(id) or []
 
 # 팔로잉 목록 조회
 @router.get("/api/{id}/following", response_model=list[FriendInfo])

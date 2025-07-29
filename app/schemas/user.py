@@ -2,14 +2,22 @@ from pydantic import BaseModel
 from typing import Optional, Literal
 from datetime import datetime
 
-'''
-@descrption users의 구조
+class User(BaseModel):
+    id: str
+    uid: str
+    userName: str
+    profileImage: Optional[str] = None
+    followers: list[str]
+    following: list[str]
 
-users (collection)
- └── hello123 (document)
-     ├── password: $2b$12$....
-     └── profileImage: Base64 or null
-'''
+class UserLogin(BaseModel):
+    id: str
+    uid: str
+    access_token: str
+    userName: str
+    profileImage: Optional[str] = None
+    followers: list[str]
+    following: list[str]
 class UserCreate(BaseModel):
     id: str
     password: str

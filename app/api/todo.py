@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from app.core import auth
-from app.schemas.todo import CategoryCreate, TodoCreate
+from app.schemas.todo import CategoryUpdate, CategoryCreate, TodoCreate, TodoUpdate
 from app.services import todo_service
 
 router = APIRouter()
@@ -15,7 +15,7 @@ def get_my_category(user_id: str = Depends(auth.get_current_user)):
 
 # 다른사람 카테고리 조회
 @router.get("/api/category/{id}", response_model=list[CategoryCreate])
-def get_my_category(id: str, _: str = Depends(auth.get_current_user)):
+def get_ones_category(id: str, _: str = Depends(auth.get_current_user)):
     categories = todo_service.get_user_categories(id)
     return categories or []
 
@@ -31,10 +31,11 @@ def create_category(category: CategoryCreate = Body(...), user_id: str = Depends
 @router.put("/api/category/{category_id}")
 def update_category(
     category_id: str,
-    category: CategoryCreate = Body(...),
+    category: CategoryUpdate = Body(...),
     user_id: str = Depends(auth.get_current_user)
 ):
-    result = todo_service.update_category(user_id, category)
+    
+    result = todo_service.update_category(user_id, category_id, category)
     if result:
         return {"message": f"Category '{category.name}'를 정상적으로 업데이트했습니다."}
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 업데이트에 실패했습니다.")
@@ -57,7 +58,7 @@ def get_my_todos(date: str = Query(...), user_id: str = Depends(auth.get_current
 
 # 다른 사람 투두리스트 조회
 @router.get("/api/todo/{id}", response_model=list[TodoCreate])
-def get_shared_todos(id: str, date: str = Query(...), _: str = Depends(auth.get_current_user)):
+def get_ones_todos(id: str, date: str = Query(...), _: str = Depends(auth.get_current_user)):
     todos = todo_service.get_user_todos_by_date(id, date)
     return todos or []
 
@@ -71,9 +72,8 @@ def create_todo(todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_cu
 
 # 투두 수정
 @router.put("/api/todo/{todo_id}")
-def update_todo(todo_id: str, todo: TodoCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
-    todo.id = todo_id  # ID는 URL에서 받음
-    result = todo_service.update_todo(user_id, todo)
+def update_todo(todo_id: str, todo: TodoUpdate = Body(...), user_id: str = Depends(auth.get_current_user)):
+    result = todo_service.update_todo(user_id, todo_id, todo)
     if result:
         return {"message": f"Todo '{todo.name}'를 정상적으로 업데이트했습니다."}
     raise HTTPException(status_code=400, detail=f"Todo '{todo.name}' 업데이트에 실패했습니다.")

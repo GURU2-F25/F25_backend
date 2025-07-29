@@ -65,11 +65,21 @@ def get_user(user_id: str):
     if user_doc.exists:
         user_data = user_doc.to_dict()
         
+         # followers: 그 사용자를 팔로우하는 사람들
+        follower_docs = db.collection("follow").where("followee_id", "==", user_id).stream()
+        followers = [doc.to_dict().get("follower_id") for doc in follower_docs]
+
+        # following: 그 사용자가 팔로우하는 사람들
+        following_docs = db.collection("follow").where("follower_id", "==", user_id).stream()
+        following = [doc.to_dict().get("followee_id") for doc in following_docs]
+        
         if "uid" not in user_data:
             generated_uuid = generate_uuid_with_timestamp()
             user_ref.update({"uid": generated_uuid})
             user_data["uid"] = generated_uuid  # 반환값에도 포함되게
         
+        user_data["followers"]=followers
+        user_data["following"]=following
         return user_data
 
     return None
