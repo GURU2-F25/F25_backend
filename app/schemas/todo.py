@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
-from typing import Literal
+from typing import List, Literal
 
 class CategoryCreate(BaseModel):
     id: str
@@ -15,3 +15,7 @@ class TodoCreate(BaseModel):
     duedate: str 
     repeat: Optional[Literal["none", "daily", "weekly"]] = "none"
     checked: Optional[Literal["false", "true"]] = "false"
+
+class TaskResponse(BaseModel):
+    categories: List[CategoryCreate]
+    todos: List[TodoCreate]
