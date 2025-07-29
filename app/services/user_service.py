@@ -4,6 +4,7 @@ from datetime import datetime
 from app.core.database import db
 from passlib.context import CryptContext
 from app.schemas.user import UserCreate
+from google.cloud.firestore_v1 import FieldPath
 from app.utils.common import generate_uuid_with_timestamp
 from dotenv import load_dotenv
 
@@ -251,24 +252,30 @@ def get_all_users_with_tokens():
 def search_users_by_prefix(prefix: str):
     try:
         start = prefix
-        # 'tes' → 'tes\uffff' (문자열 범위 끝)
         end = prefix + "\uf8ff"
 
-        # Firestore에서 __name__ (document ID)에 대해 범위 쿼리
         user_query = (
             db.collection("users")
-            .order_by("__name__")
-            .start_at({"__name__": start})
-            .end_at({"__name__": end})
+            .order_by(FieldPath.document_id())
+            .start_at([start])
+            .end_at([end])
             .stream()
         )
 
         results = []
         for doc in user_query:
-            results.append({
-                "id": doc.id,
-                "data": doc.to_dict()  # 필요 없다면 제외 가능
-            })
+            data = doc.to_dict()
+
+            # 민감 정보 필터링: password, token, email 등 제거
+            safe_data = {
+                "id": data.get("id"),
+                "uid": data.get("uid"),
+                "profileImage": data.get("profileImage"),
+                "userName": data.get("nickname"),   # 예시 필드
+            }
+
+            results.append(safe_data)
+
         return results
     except Exception as e:
         print("Error:", e)
