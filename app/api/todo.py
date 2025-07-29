@@ -22,7 +22,7 @@ def get_shared_todos(id: str, date: str = Query(...), _: str = Depends(auth.get_
 # ------------------ CATEGORY -------------------
 
 # 카테고리 생성
-@router.post("/api/categorie")
+@router.post("/api/category")
 def create_category(category: CategoryCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.create_category(user_id, category)
     if result:
@@ -30,7 +30,7 @@ def create_category(category: CategoryCreate = Body(...), user_id: str = Depends
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 생성에 실패했습니다.")
 
 # 카테고리 수정
-@router.put("/api/categorie/{category_id}")
+@router.put("/api/category/{category_id}")
 def update_category(
     category_id: str,
     category: CategoryCreate = Body(...),
@@ -42,7 +42,7 @@ def update_category(
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 업데이트에 실패했습니다.")
 
 # 카테고리 삭제
-@router.delete("/api/categorie/{category_id}")
+@router.delete("/api/category/{category_id}")
 def delete_category(category_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.delete_category(user_id, category_id)
     if result:
