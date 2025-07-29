@@ -27,8 +27,9 @@ def check_id(id: str):
 # ------------------ SEARCH -------------------
 
 # 서치
-@router.get("/api/users/search")
+@router.get("/api/search")
 def search_users(prefix: str = Query(..., min_length=1)):
+    print("씨발", prefix)
     results = user_service.search_users_by_prefix(prefix)
     return results
 

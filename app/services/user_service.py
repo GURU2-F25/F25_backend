@@ -4,7 +4,8 @@ from datetime import datetime
 from app.core.database import db
 from passlib.context import CryptContext
 from app.schemas.user import UserCreate
-from google.cloud.firestore_v1 import FieldPath
+from google.cloud import firestore
+from google.cloud.firestore_v1.field_path import FieldPath  
 from app.utils.common import generate_uuid_with_timestamp
 from dotenv import load_dotenv
 
@@ -253,6 +254,7 @@ def search_users_by_prefix(prefix: str):
     try:
         start = prefix
         end = prefix + "\uf8ff"
+        print(start)
 
         user_query = (
             db.collection("users")
@@ -268,7 +270,7 @@ def search_users_by_prefix(prefix: str):
 
             # 민감 정보 필터링: password, token, email 등 제거
             safe_data = {
-                "id": data.get("id"),
+                "id": doc.id,
                 "uid": data.get("uid"),
                 "profileImage": data.get("profileImage"),
                 "userName": data.get("nickname"),   # 예시 필드
