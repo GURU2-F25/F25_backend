@@ -5,21 +5,19 @@ from app.services import todo_service
 
 router = APIRouter()
 
-# 내 투두리스트 조회
-@router.get("/api/tasks/me", response_model=TaskResponse)
-def get_my_todos(date: str = Query(...), user_id: str = Depends(auth.get_current_user)):
-    categories = todo_service.get_user_categories(user_id)
-    todos = todo_service.get_user_todos_by_date(user_id, date)
-    return {"categories": categories, "todos": todos}
-
-# 다른 사람 투두리스트 조회
-@router.get("/api/tasks/{id}", response_model=TaskResponse)
-def get_shared_todos(id: str, date: str = Query(...), _: str = Depends(auth.get_current_user)):
-    categories = todo_service.get_user_categories(id)
-    todos = todo_service.get_user_todos_by_date(id, date)
-    return {"categories": categories, "todos": todos}
-
 # ------------------ CATEGORY -------------------
+
+# 내 카테고리 조회
+@router.get("/api/category/me", response_model=list[CategoryCreate])
+def get_my_category(user_id: str = Depends(auth.get_current_user)):
+    categories = todo_service.get_user_categories(user_id)
+    return categories or []
+
+# 다른사람 카테고리 조회
+@router.get("/api/category/{id}", response_model=list[CategoryCreate])
+def get_my_category(id: str, _: str = Depends(auth.get_current_user)):
+    categories = todo_service.get_user_categories(id)
+    return categories or []
 
 # 카테고리 생성
 @router.post("/api/category")
@@ -50,6 +48,18 @@ def delete_category(category_id: str, user_id: str = Depends(auth.get_current_us
     raise HTTPException(status_code=400, detail="Category 삭제에 실패했습니다.")
 
 # ------------------ TODO -------------------
+
+# 내 투두리스트 조회
+@router.get("/api/todo/me", response_model=list[TodoCreate])
+def get_my_todos(date: str = Query(...), user_id: str = Depends(auth.get_current_user)):
+    todos = todo_service.get_user_todos_by_date(user_id, date)
+    return todos or []
+
+# 다른 사람 투두리스트 조회
+@router.get("/api/todo/{id}", response_model=list[TodoCreate])
+def get_shared_todos(id: str, date: str = Query(...), _: str = Depends(auth.get_current_user)):
+    todos = todo_service.get_user_todos_by_date(id, date)
+    return todos or []
 
 # 투두 생성
 @router.post("/api/todo")
