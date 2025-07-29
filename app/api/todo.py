@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from app.core import auth
-from app.schemas.todo import TaskResponse, CategoryCreate, TodoCreate
+from app.schemas.todo import CategoryCreate, TodoCreate
 from app.services import todo_service
 
 router = APIRouter()

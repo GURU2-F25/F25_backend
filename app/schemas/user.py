@@ -26,8 +26,15 @@ class RequestId(BaseModel):
 class QuitRequest(BaseModel):
     password: str
 
-
 class FriendInfo(BaseModel):
     id: str
     userName: str
     profileImage: Optional[str] = None
+    
+class UserSearchResult(BaseModel):
+    id: str
+    uid: Optional[str] = None
+    profileImage: Optional[str] = None
+    userName: Optional[str] = None
+    followers: list[str]
+    following: list[str]

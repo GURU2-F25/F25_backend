@@ -15,7 +15,3 @@ class TodoCreate(BaseModel):
     duedate: str 
     repeat: Optional[Literal["none", "daily", "weekly"]] = "none"
     checked: Optional[Literal["false", "true"]] = "false"
-
-class TaskResponse(BaseModel):
-    categories: List[CategoryCreate]
-    todos: List[TodoCreate]

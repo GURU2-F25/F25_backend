@@ -254,8 +254,8 @@ def search_users_by_prefix(prefix: str):
     try:
         start = prefix
         end = prefix + "\uf8ff"
-        print(start)
 
+        # 먼저 유저 검색
         user_query = (
             db.collection("users")
             .order_by(FieldPath.document_id())
@@ -264,21 +264,39 @@ def search_users_by_prefix(prefix: str):
             .stream()
         )
 
-        results = []
-        for doc in user_query:
+        # 검색된 유저 ID들 수집
+        users = []
+        user_ids = []
+        for i, doc in enumerate(user_query):
+            if i >= 5:
+                break
             data = doc.to_dict()
+            target_user_id = doc.id
 
-            # 민감 정보 필터링: password, token, email 등 제거
-            safe_data = {
-                "id": doc.id,
+            users.append({
+                "id": target_user_id,
                 "uid": data.get("uid"),
                 "profileImage": data.get("profileImage"),
-                "userName": data.get("nickname"),   # 예시 필드
-            }
+                "userName": data.get("userName"),
+            })
+            user_ids.append(target_user_id)
 
-            results.append(safe_data)
+        # isFollowing 추가
+        for user in users:
+            target_id = user["id"]
 
-        return results
+            # followers: 그 사용자를 팔로우하는 사람들
+            follower_docs = db.collection("follow").where("followee_id", "==", target_id).stream()
+            followers = [doc.to_dict().get("follower_id") for doc in follower_docs]
+
+            # following: 그 사용자가 팔로우하는 사람들
+            following_docs = db.collection("follow").where("follower_id", "==", target_id).stream()
+            following = [doc.to_dict().get("followee_id") for doc in following_docs]
+
+            user["followers"] = followers
+            user["following"] = following
+        return users
+
     except Exception as e:
         print("Error:", e)
         return []

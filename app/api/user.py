@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from app.core import auth
 from app.services import user_service
-from app.schemas.user import FriendInfo, QuitRequest
+from app.schemas.user import FriendInfo, QuitRequest, UserSearchResult
 
 router = APIRouter()
 
@@ -27,9 +27,8 @@ def check_id(id: str):
 # ------------------ SEARCH -------------------
 
 # 서치
-@router.get("/api/search")
-def search_users(prefix: str = Query(..., min_length=1)):
-    print("씨발", prefix)
+@router.get("/api/search", response_model=list[UserSearchResult])
+def search_users(prefix: str = Query(..., min_length=1), _: str = Depends(auth.get_current_user)):
     results = user_service.search_users_by_prefix(prefix)
     return results
 
