@@ -271,15 +271,14 @@ def search_users_by_prefix(prefix: str):
             .order_by(FieldPath.document_id())
             .start_at([start])
             .end_at([end])
+            .limit(5)
             .stream()
         )
 
         # 검색된 유저 ID들 수집
         users = []
         user_ids = []
-        for i, doc in enumerate(user_query):
-            if i >= 5:
-                break
+        for doc in user_query:
             data = doc.to_dict()
             target_user_id = doc.id
 
