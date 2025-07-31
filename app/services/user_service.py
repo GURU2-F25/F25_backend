@@ -4,7 +4,6 @@ from datetime import datetime
 from app.core.database import db
 from passlib.context import CryptContext
 from app.schemas.user import UserCreate
-from google.cloud import firestore
 from google.cloud.firestore_v1.field_path import FieldPath  
 from app.utils.common import generate_uuid_with_timestamp
 from dotenv import load_dotenv
@@ -132,11 +131,10 @@ def save_device_token(user_id: str, token: str):
 # 사용자 및 관련 데이터 삭제
 def delete_user(user_id: str)->bool:
     """
-    회원 탈퇴 처리. 사용자 계정, 친구 관계, 친구 요청 등을 모두 삭제합니다.
+    회원 탈퇴 처리. 사용자 계정, 팔로우 관계 등을 모두 삭제합니다.
     """
     try:
         db.collection("users").document(user_id).delete()
-        friends = db.collection("friends").where("user_id", "==", user_id).stream()
         follows = db.collection("follow").where("follower_id", "==", user_id).stream()
         for doc in follows:
             doc.reference.delete()
@@ -152,6 +150,13 @@ def delete_user(user_id: str)->bool:
     
 # 팔로우 요청
 def follow_user(follower_id: str, followee_id: str) -> str:
+    """
+    사용자가 다른 사용자를 팔로우합니다.
+    - 본인을 팔로우할 수 없습니다.
+    - 존재하지 않는 사용자를 팔로우할 수 없습니다.
+    - 이미 팔로우 중인 경우 중복 팔로우를 방지합니다.
+    - 팔로우 관계를 생성합니다.
+    """
     if follower_id == followee_id:
         return "self_follow"
 
@@ -172,38 +177,26 @@ def follow_user(follower_id: str, followee_id: str) -> str:
 
 #팔로우 끊기
 def unfollow_user(follower_id: str, followee_id: str) -> str:
+    """
+    사용자가 다른 사용자의 팔로우를 취소합니다.
+    - 팔로우 관계가 존재하는 경우 삭제합니다.
+    - 팔로우 관계가 존재하지 않으면 아무 작업도 하지 않습니다.
+    """
     follow_ref = db.collection("follow").document(f"{follower_id}_{followee_id}")
     if follow_ref.get().exists:
         follow_ref.delete()
         return "unfollowed"
     return "not_following"
 
-# 친구 목록 조회
-def get_friendlist(user_id: str) -> list[dict]:
-    try:
-        following = db.collection("follow").where("follower_id", "==", user_id).stream()
-        result = []
-        for f in following:
-            data = f.to_dict()
-            followee_id = data["followee_id"]
-            # 맞팔 여부 확인
-            if db.collection("follow").document(f"{followee_id}_{user_id}").get().exists:
-                user_doc = db.collection("users").document(followee_id).get()
-                if user_doc.exists:
-                    user_data = user_doc.to_dict()
-                    result.append({
-                        "id": followee_id,
-                        "userName": user_data.get("userName", ""),
-                        "profileImage": user_data.get("profileImage")
-                    })
-        return result
-    except Exception as e:
-        print(f"[ERROR] 친구 목록 조회 실패: {e}")
-        return []
-    
-
 # 팔로잉 목록 조회
 def get_following_list(user_id: str) -> list[dict]:
+    """
+    주어진 사용자(user_id)가 팔로우하고 있는 사용자 목록을 조회합니다.
+
+    - follow 컬렉션에서 follower_id가 user_id인 문서를 조회합니다.
+    - 각 followee_id에 해당하는 사용자 정보를 users 컬렉션에서 가져옵니다.
+    - userName과 profileImage 등 기본 프로필 정보를 함께 반환합니다.
+    """
     follows = db.collection("follow").where("follower_id", "==", user_id).stream()
     result = []
     for doc in follows:
@@ -220,6 +213,13 @@ def get_following_list(user_id: str) -> list[dict]:
 
 # 팔로워 목록 조회 
 def get_follower_list(user_id: str) -> list[dict]:
+    """
+    주어진 사용자(user_id)를 팔로우하고 있는 사용자 목록을 조회합니다.
+    - follow 컬렉션에서 followee_id가 user_id인 문서를 조회합니다.
+    - 각 follower_id에 해당하는 사용자 정보를 users 컬렉션에서 가져옵니다.
+    - userName과 profileImage 등 기본 프로필 정보를 함께 반환합니다.
+    - Firestore 조회 중 오류가 발생하면 에러 메시지를 출력하고 빈 리스트 반환
+    """
     try:
         followers = db.collection("follow").where("followee_id", "==", user_id).stream()
         result = []
@@ -241,6 +241,13 @@ def get_follower_list(user_id: str) -> list[dict]:
 
 # 전체 유저 가져오기
 def get_all_users_with_tokens():
+    """
+    FCM 푸시 알림을 위한 사용자 목록을 가져옵니다.
+    - deviceToken 필드가 존재하고 빈 문자열이 아닌 사용자만 조회합니다.
+      (deviceToken은 로그인을 1회 이상 한 사용자에게만 생성됩니다.)
+    - Firestore의 where 조건으로 빈 문자열 비교는 제한이 있으므로
+      'deviceToken' 필드가 존재하면서 None/빈 문자열이 아닌 경우만 필터링합니다.
+    """
     users_ref = db.collection("users")
     # deviceToken 필드가 존재하고 빈 문자열이 아닌 문서만 필터링 (Firestore에서 직접 빈 문자열 필터링은 안 될 수 있어서 필드 존재만 체크)
     query = users_ref.where("deviceToken", "!=", "").stream()
@@ -254,13 +261,19 @@ def get_all_users_with_tokens():
                 "id": doc.id,
                 "fcm_token": token,
                 "userName": data.get("userName", ""),
-                # 필요한 필드 추가 가능
             })
 
     return result
 
 # 유저 검색
 def search_users_by_prefix(prefix: str):
+    """
+    주어진 접두사(prefix)를 기반으로 사용자 ID를 검색합니다.
+    - 사용자 문서 ID 기준으로 검색합니다 (document_id 사용).
+    - 최대 5명의 사용자만 검색됩니다.
+    - 각 사용자에 대해 기본 정보(id, uid, profileImage, userName)를 포함합니다.
+    - 각 사용자에 대해 followers(자신을 팔로우하는 사람들) 및 following(자신이 팔로우하는 사람들) 목록도 함께 반환합니다.
+    """
     try:
         start = prefix
         end = prefix + "\uf8ff"
