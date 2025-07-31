@@ -8,19 +8,19 @@ router = APIRouter()
 # ------------------ CATEGORY -------------------
 
 # 내 카테고리 조회
-@router.get("/api/category/me", response_model=list[CategoryCreate])
+@router.get("/api/categories/me", response_model=list[CategoryCreate])
 def get_my_category(user_id: str = Depends(auth.get_current_user)):
     categories = todo_service.get_user_categories(user_id)
     return categories or []
 
 # 다른사람 카테고리 조회
-@router.get("/api/category/{id}", response_model=list[CategoryCreate])
+@router.get("/api/categories/{id}", response_model=list[CategoryCreate])
 def get_ones_category(id: str, _: str = Depends(auth.get_current_user)):
     categories = todo_service.get_user_categories(id)
     return categories or []
 
 # 카테고리 생성
-@router.post("/api/category")
+@router.post("/api/categories")
 def create_category(category: CategoryCreate = Body(...), user_id: str = Depends(auth.get_current_user)):
     result = todo_service.create_category(user_id, category)
     if result:
@@ -28,7 +28,7 @@ def create_category(category: CategoryCreate = Body(...), user_id: str = Depends
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 생성에 실패했습니다.")
 
 # 카테고리 수정
-@router.put("/api/category/{category_id}")
+@router.put("/api/categories/{category_id}")
 def update_category(
     category_id: str,
     category: CategoryUpdate = Body(...),
@@ -41,7 +41,7 @@ def update_category(
     raise HTTPException(status_code=400, detail=f"Category '{category.name}' 업데이트에 실패했습니다.")
 
 # 카테고리 삭제
-@router.delete("/api/category/{category_id}")
+@router.delete("/api/categories/{category_id}")
 def delete_category(category_id: str, user_id: str = Depends(auth.get_current_user)):
     result = todo_service.delete_category(user_id, category_id)
     if result:
