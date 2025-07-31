@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-from app import routes, database
-
-# .env 파일에서 환경 변수 로드
-load_dotenv()
+from fastapi.openapi.utils import get_openapi
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.jobs.reminder import send_due_soon_notifications
+from app.api import (auth, user, todo, push, healthz)
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -24,11 +22,51 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(routes.router)
+app.include_router(auth.router)
+app.include_router(user.router)
+app.include_router(todo.router)
+app.include_router(push.router)
+app.include_router(healthz.router)
 
+@app.on_event("startup")
+async def startup_event():
+    start_scheduler()
+    
 @app.on_event("shutdown")
 async def on_shutdown():
     print("Shutting down...")
+
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(send_due_soon_notifications, "interval", hours=2)
+    scheduler.start()
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title="Your App Name",
+        version="1.0.0",
+        description="API 문서",
+        routes=app.routes,
+    )
+
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+    for path in openapi_schema["paths"].values():
+        for method in path.values():
+            method.setdefault("security", [{"BearerAuth": []}])
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # uvicorn으로 직접 실행
 if __name__ == "__main__":

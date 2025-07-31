@@ -1,0 +1,19 @@
+name: Push Reminder Scheduler
+
+on:
+  schedule:
+    # 매 1시간마다 실행
+    - cron: '0 0-23/1 * * *'
+  workflow_dispatch:
+jobs:
+  send_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping to wake up server
+        run: |
+          echo "Pinging health check endpoint..."
+          curl --retry 5 --retry-delay 5 --max-time 30 "${{ secrets.PROD_SERVER_URL }}/api/healthz"
+
+      - name: Call push reminder API
+        run: |
+          curl -X POST "${{ secrets.PROD_SERVER_URL }}/api/push/reminder"
